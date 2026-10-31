@@ -283,6 +283,27 @@ describe('message_agent', () => {
   });
 });
 
+describe('files travel by stored reference', () => {
+  it('message_agent sends the references it was given, and the backend keeps the bounds', async () => {
+    mockDoor([['/workflows/developer/inbox', () => ({ json: { ok: true, messageId: 'note-1' } })]]);
+    const attachments = [{ id: '18f195fa-2c1e-4acb-be0d-06cc43299ec3', name: 'shot.png' }];
+    await call('message_agent', { workflowType: 'developer', text: 'see this', attachments });
+    expect(seen[0].body.attachments).toEqual(attachments);
+  });
+
+  it('check_messages hands over the references a note carries', async () => {
+    const attachments = [{ id: '18f195fa-2c1e-4acb-be0d-06cc43299ec3', name: 'shot.png' }];
+    const row = { scope: 'project-manager:doorbell:n1', createdAt: '2026-09-13T09:59:00.000Z',
+      content: JSON.stringify({ id: 'n1', at: '2026-09-13T09:59:00.000Z', from: { kind: 'human', name: 'leo' }, about: { executionId: SELF }, text: 'x', needsAck: true, attachments }) };
+    mockDoor([
+      [(url: string) => /\/ack/.test(url), () => ({ json: { ok: true, found: true, ackedAt: '2026-09-13T10:00:00.000Z' } })],
+      ['/credits/review-memory', () => ({ json: { memories: [row] } })],
+    ]);
+    const out = await call('check_messages');
+    expect(out.messages[0].attachments).toEqual(attachments);
+  });
+});
+
 describe('check_messages', () => {
   const PREFIX = 'project-manager:doorbell:';
   const note = (id: string, m: Record<string, any>) => ({

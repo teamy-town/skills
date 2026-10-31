@@ -756,7 +756,7 @@ describe('skill shape', () => {
   it('exposes document and versioned design tools (artifact catalog is delegated to kv-memory)', () => {
     expect(artifactSkill.id).toBe('artifact');
     expect(artifactSkill.tools.map((t) => t.name).sort()).toEqual([
-      'artifact_get', 'artifact_publish', 'artifact_restore', 'artifact_share', 'artifact_unshare', 'artifact_update', 'artifact_versions',
+      'artifact_get', 'artifact_open', 'artifact_publish', 'artifact_restore', 'artifact_share', 'artifact_unshare', 'artifact_update', 'artifact_versions',
     ]);
     expect(artifactSkill.allowedTools).toContain('mcp__artifact__*');
   });
@@ -823,5 +823,62 @@ describe('artifact_publish rn passthrough', () => {
     }));
     expect(out).toEqual({ id: ID, url: `http://box/a/${ID}` });
     expect('rn' in out).toBe(false);
+  });
+});
+
+describe('artifact_open — a stored file comes into THIS run through its own mailbox', () => {
+  const ID = '18f195fa-2c1e-4acb-be0d-06cc43299ec3';
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => {
+    for (const k of ['EXECUTION_ID', 'PROJECT_ID', 'WORKFLOW_TYPE']) saved[k] = process.env[k];
+    process.env.EXECUTION_ID = 'run-9'; process.env.PROJECT_ID = 'proj-1'; process.env.WORKFLOW_TYPE = 'designer';
+  });
+  afterEach(() => {
+    for (const [k, v] of Object.entries(saved)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    vi.unstubAllGlobals();
+  });
+  const door = (read: any, posts: any[] = []) => vi.fn(async (url: any, options: any = {}) => {
+    if (options.method === 'POST') { posts.push({ url: String(url), body: JSON.parse(options.body), auth: options.headers.Authorization }); return new Response('{}', { status: 200 }); }
+    return read;
+  });
+
+  it('reads under the run\'s token, then posts the reference to the run\'s own inbox', async () => {
+    const posts: any[] = [];
+    vi.stubGlobal('fetch', door(new Response(JSON.stringify({ metadata: { binary: true, bytes: 4, title: 'shot.png' } })), posts));
+    const out = JSON.parse(await artifactSkill.handleToolCall('artifact_open', { id: ID }));
+    expect(out).toMatchObject({ opening: true, id: ID, name: 'shot.png' });
+    expect(posts).toHaveLength(1);
+    expect(posts[0].url).toBe('http://cp.local/projects/proj-1/workflows/designer/inbox');
+    expect(posts[0].body).toMatchObject({ executionId: 'run-9', fileForThisRun: true, attachments: [{ id: ID, name: 'shot.png' }] });
+    expect(JSON.stringify(out)).not.toContain('zby_pat_test');
+  });
+
+  it('another project\'s id stops at the read: nothing is posted, and the answer says so', async () => {
+    const posts: any[] = [];
+    vi.stubGlobal('fetch', door(new Response('Forbidden', { status: 403 }), posts));
+    const out = JSON.parse(await artifactSkill.handleToolCall('artifact_open', { id: ID }));
+    expect(out.error).toMatch(/403/);
+    expect(posts).toEqual([]);
+  });
+
+  it('a page, an expired file and one over the run-side limit are plain facts', async () => {
+    const posts: any[] = [];
+    for (const [metadata, said] of [[{ binary: false }, /artifact_get returns its text/], [{ binary: true, expired: true }, /expired/], [{ binary: true, bytes: 9 * 1024 * 1024 }, /over 8 MB/]] as const) {
+      vi.stubGlobal('fetch', door(new Response(JSON.stringify({ metadata })), posts));
+      expect(JSON.parse(await artifactSkill.handleToolCall('artifact_open', { id: ID })).error).toMatch(said);
+    }
+    expect(posts).toEqual([]);
+  });
+
+  it('artifact_get tells the reader of a stored file how to open it, and says nothing on a page', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ metadata: { binary: true }, content: null, download: { url: 'http://x' } }))));
+    expect(JSON.parse(await artifactSkill.handleToolCall('artifact_get', { id: ID })).open).toMatch(/artifact_open/);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ metadata: { binary: false }, content: 'hi' }))));
+    expect(JSON.parse(await artifactSkill.handleToolCall('artifact_get', { id: ID })).open).toBeUndefined();
+  });
+
+  it('forwards the run identity the call needs', () => {
+    const spec = artifactSkill.resolve();
+    if (spec.command) expect(Object.keys(spec.env)).toEqual(expect.arrayContaining(['EXECUTION_ID', 'PROJECT_ID', 'WORKFLOW_TYPE']));
   });
 });

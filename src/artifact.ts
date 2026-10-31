@@ -171,6 +171,8 @@ function agentNamespace() {
  * byte-identical to before.
  */
 export const ARTIFACT_OWNER_ENV = 'ARTIFACT_OWNER_WORKFLOW_TYPE';
+/** The run-side reader's limit (@zibby/core CHAT_ATTACHMENT_MAX_BYTES); skills cannot import core, the pair is pinned by artifact.test.ts. */
+export const ARTIFACT_OPEN_MAX_BYTES = 8 * 1024 * 1024;
 
 /** The namespace artifact INDEX records live under: the bound agent, else this agent. */
 function artifactOwnerNamespace() {
@@ -526,6 +528,42 @@ async function publishWithBudget(payload, format, preflight?: { html: string; da
 }
 
 /** GET {base}/artifacts/{id} — authenticated fetch of one artifact's metadata + source content. */
+/**
+ * BRING A STORED FILE INTO THIS RUN. This handler may be served by the control
+ * plane (a Mac sandbox run's calls are), so a file written here would not be in
+ * the run's folder. What is always in the run is its inbox pump: the file is
+ * posted to this run's own mailbox, and the pump opens it under the run's own
+ * project access and tells the model the local path, on every engine.
+ * The read below is the tenant check: another project's id stops here.
+ */
+async function artifactOpen(id: string, wantedName: unknown) {
+  const data = await artifactReadFetch(id);
+  const meta = data?.metadata;
+  if (!meta?.binary) return { error: `Artifact ${id} is a page, not a stored file: artifact_get returns its text.` };
+  if (meta.expired) return { error: `Artifact ${id} has expired: its file is gone.` };
+  if (Number(meta.bytes) > ARTIFACT_OPEN_MAX_BYTES) return { error: `Artifact ${id} is over 8 MB, too large to bring into a run.` };
+  const executionId = process.env.EXECUTION_ID;
+  const projectId = process.env.PROJECT_ID;
+  const workflowType = process.env.WORKFLOW_TYPE;
+  if (!executionId || !projectId || !workflowType) return { error: 'This call does not know its run, so the file cannot be brought into it.' };
+  const name = (typeof wantedName === 'string' && wantedName.trim()) || meta.title || id;
+  const res = await fetchWithDeadline(`${getAccountApiUrl()}/projects/${encodeURIComponent(projectId)}/workflows/${encodeURIComponent(workflowType)}/inbox`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getSessionToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: `The file you opened with artifact_open: ${String(name).slice(0, 200)}`,
+      executionId,
+      fileForThisRun: true,
+      attachments: [{ id, name: String(name).slice(0, 200) }],
+    }),
+  }, { kind: 'api', what: `artifact open ${id}` });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`artifact open failed (${res.status}): ${body.slice(0, 300)}`);
+  }
+  return { opening: true, id, name, arrives: 'The file arrives in this run as a message naming its local path, usually within 20 seconds. If it cannot be opened, that message says why.' };
+}
+
 async function artifactReadFetch(id) {
   const session = getSessionToken();
   if (!session) {
@@ -870,6 +908,7 @@ a shareable URL.
 Tools:
 - artifact_publish: Publish a NEW page.
 - artifact_update: Revise an EXISTING page by \`id\` (same url, new version).
+- artifact_open: Bring a stored file (an image or document attached to a message, by its \`id\`) into this run as a local file you can view.
 - artifact_get: Fetch one artifact by \`id\` → { metadata, content } so you can
   reuse / edit / re-publish it.
 - artifact_share: Make a page readable WITHOUT a Zibby login → { url, password }.
@@ -892,6 +931,8 @@ Tools:
       // `WORKFLOW_TYPE` is the kv index namespace (see agentNamespace()).
       'PROJECT_API_TOKEN', 'ZIBBY_ACCOUNT_API_URL', 'ZIBBY_ENV', 'ZIBBY_PROD_ACCOUNT_API_URL', 'ZIBBY_USER_TOKEN',
       'WORKFLOW_TYPE', ARTIFACT_OWNER_ENV,
+      // artifact_open addresses this run's own mailbox.
+      'EXECUTION_ID', 'PROJECT_ID',
     ]) {
       if (process.env[key]) env[key] = process.env[key];
     }
@@ -1094,7 +1135,15 @@ Tools:
             try { return JSON.stringify(await designClient({ baseUrl: getAccountApiUrl(), token: getSessionToken() }).get(id)); }
             catch (error) { return JSON.stringify(designError(error)); }
           }
-          return JSON.stringify(data);
+          // A stored file's bytes are not in this answer, and this tool may be served away from the run's folder.
+          return JSON.stringify(data?.metadata?.binary && !data.metadata.expired
+            ? { ...data, open: 'This is a stored file: artifact_open with this id brings it into this run as a local file.' } : data);
+        }
+
+        case 'artifact_open': {
+          const id = typeof args?.id === 'string' ? args.id.trim() : '';
+          if (!id) return JSON.stringify({ error: 'id is required' });
+          return JSON.stringify(await artifactOpen(id, args?.name));
         }
 
         case 'artifact_share': {
@@ -1192,6 +1241,18 @@ Tools:
           favicon: { type: 'string', description: 'Optional updated emoji favicon.' },
           summary: { type: 'string', description: 'Optional updated one-line index summary.' },
           description: { type: 'string', description: 'Optional updated Markdown note shown under the artifact on its detail page. You may pass this ALONE to add or rewrite the explanation without touching the artifact itself — the content keeps its current version.' },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'artifact_open',
+      description: 'Bring a stored file of this project into this run as a local file you can view: an image or document someone attached, by its stored reference (the id). The answer says it is on its way; the file then arrives as a message naming its local path.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'The stored reference (artifact id).' },
+          name: { type: 'string', description: 'The file name, when you know it.' },
         },
         required: ['id'],
       },

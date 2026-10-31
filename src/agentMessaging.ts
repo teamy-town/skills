@@ -496,6 +496,9 @@ async function messageAgent(args: any) {
   // Passed through as given: the BOUNDS and the refusal sentences are the
   // backend's (services/agent-inbox.js), one declaration, not re-checked here.
   if (delaySeconds != null && delaySeconds !== '') body.delaySeconds = delaySeconds;
+  // Stored references only. The recipient's own run opens them under its own
+  // project access; the bounds and the id shape are the backend's (agent-inbox.js).
+  if (Array.isArray(args?.attachments) && args.attachments.length) body.attachments = args.attachments;
   // The sender's display name for a member post (the handler derives `from.kind`
   // from the token, never from this; the name is display-only).
   const from = selfWorkflowType();
@@ -729,6 +732,8 @@ export function parseInboxNote(row: KvRow | null | undefined) {
     ackedAt: typeof parsed.ackedAt === 'string' && parsed.ackedAt ? parsed.ackedAt : null,
     ackedBy: parsed.ackedBy && typeof parsed.ackedBy === 'object' ? parsed.ackedBy : null,
     text: parsed.text,
+    // Files sent with the note, by stored reference (artifact_open brings one into this run).
+    ...(Array.isArray(parsed.attachments) && parsed.attachments.length ? { attachments: parsed.attachments } : {}),
     // THE CARD A PERSON'S ANSWER BELONGS TO (agent-inbox.js ANSWER_TO_FIELDS):
     // its question, the choices it offered and what they chose. Written by the
     // platform from the card's own row, so it is handed on whole — without it
@@ -1138,6 +1143,11 @@ refused; credentials belong on the agent's Env tab.`,
           text: { type: 'string', description: `Plain text, up to ${MESSAGE_TEXT_MAX} characters (a longer one is refused whole). No tokens or keys. A note to yourself is read by a round with no memory of this one: it needs what you were doing, what you wait on, how to check whether it happened, and what to do either way.` },
           ticketKey: { type: 'string', description: 'The ticket it is about.' },
           delaySeconds: { type: 'integer', minimum: 10, maximum: 86400, description: 'Hold it this many seconds (10 to 86400), then wake the recipient; nobody sees it before.' },
+          attachments: {
+            type: 'array', maxItems: 4,
+            description: 'Files to send with the note, by stored reference. The recipient\'s run gets each as a local file of its own. A path in your folder means nothing to another run.',
+            items: { type: 'object', properties: { id: { type: 'string', description: 'The stored reference (artifact id).' }, name: { type: 'string', description: 'The file name.' } }, required: ['id', 'name'] },
+          },
         },
         required: ['text'],
       },
