@@ -178,6 +178,7 @@ describe('design errors and confirmed commit recovery', () => {
   });
   it('hydrates generic GET through the shared parser even for an incomplete design receipt', async () => {
     const v1 = await create();
+    expect(v1.committed).toBe(true);
     fault = (req, res) => req.url.includes(`/artifacts/${v1.id}`) && req.method === 'GET'
       ? Response.json({ details: { url: 'https://objects.mock.invalid/private-capability' } }) : res;
     const out = await call('artifact_get', { id: v1.id });
