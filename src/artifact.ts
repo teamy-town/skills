@@ -1,5 +1,6 @@
 import { SKILL_META } from '@zibby/skill-ids';
 import { designProperties, designVersionProperty, designTools, isDesignCall, handleDesignTool, designClient, designError } from './artifactDesign.js';
+import { commentTools, isCommentCall, handleCommentTool } from './artifactComments.js';
 /**
  * artifact.js — publish a self-contained, shareable HTML/Markdown page.
  *
@@ -949,6 +950,7 @@ Tools:
 
   async handleToolCall(name, args) {
     try {
+      if (isCommentCall(name)) return JSON.stringify(await handleCommentTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken() }));
       if (isDesignCall(name, args)) {
         try {
           return JSON.stringify(await handleDesignTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken(), indexRecall, indexStore, ownerNamespace: artifactOwnerNamespace() }));
@@ -1181,6 +1183,7 @@ Tools:
 
   tools: [
     ...designTools,
+    ...commentTools,
     {
       name: 'artifact_publish',
       description:
