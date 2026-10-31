@@ -1090,7 +1090,7 @@ Tools:
           if (!id) return JSON.stringify({ error: 'id is required' });
           const data = await artifactReadFetch(id); // { metadata, content }
           // A latest design receipt carries object capabilities, not legacy source. Hydrate through the shared client.
-          if (data?.snapshot && data?.revision && data?.artifactId) {
+          if (data && ['artifactId', 'snapshot', 'revision', 'details'].some(key => Object.hasOwn(data, key))) {
             try { return JSON.stringify(await designClient({ baseUrl: getAccountApiUrl(), token: getSessionToken() }).get(id)); }
             catch (error) { return JSON.stringify(designError(error)); }
           }

@@ -176,6 +176,14 @@ describe('design errors and confirmed commit recovery', () => {
     expect(out.committed).toBeUndefined(); expect(out.error).toBeTruthy(); expect(records.size).toBe(0);
     expect(receipts).toHaveLength(1);
   });
+  it('hydrates generic GET through the shared parser even for an incomplete design receipt', async () => {
+    const v1 = await create();
+    fault = (req, res) => req.url.includes(`/artifacts/${v1.id}`) && req.method === 'GET'
+      ? Response.json({ details: { url: 'https://objects.mock.invalid/private-capability' } }) : res;
+    const out = await call('artifact_get', { id: v1.id });
+    expect(out.error).toBeTruthy();
+    expect(JSON.stringify(out)).not.toContain('private-capability');
+  });
   it.each(['recall', 'store'])('keeps confirmed commit during index %s outage and preserves the old record', async op => {
     const v1 = await create(); const key = `original-owner:artifact:${v1.id}`; const old = clone(records.get(key));
     indexFailure = op;
@@ -183,6 +191,22 @@ describe('design errors and confirmed commit recovery', () => {
     expect(out).toMatchObject({ committed: true, commit: { currentVersion: 2 } });
     expect(out.indexWarning).toBeTruthy(); expect(records.get(key)).toEqual(old); expect(receipts).toHaveLength(2);
   });
+});
+
+it('keeps explicitly published JSON text on the existing file transport, even when its contents describe a design', async () => {
+  const source = JSON.stringify(threeArtboards);
+  const legacy = vi.fn(async (input, init = {}) => {
+    const url = String(input);
+    if (url.endsWith('/credits/review-memory')) return Response.json({ stored: true });
+    if (init.method === 'POST') {
+      expect(JSON.parse(init.body)).toMatchObject({ text: source, contentType: 'application/json' });
+      return Response.json({ id: 'legacy-file', url: 'https://viewer.invalid/legacy-file' });
+    }
+    return Response.json({ metadata: { id: 'legacy-file', contentType: 'application/json' }, content: source, format: 'text' });
+  });
+  vi.stubGlobal('fetch', legacy);
+  expect(await call('artifact_publish', { title: 'design.json', text: source, contentType: 'application/json' })).toEqual({ id: 'legacy-file', url: 'https://viewer.invalid/legacy-file' });
+  expect(legacy.mock.calls.some(([url]) => String(url).includes('design-uploads'))).toBe(false);
 });
 
 it('an unrelated agent declaring artifact discovers and calls the same design tools through generic MCP', async () => {
