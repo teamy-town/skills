@@ -753,10 +753,10 @@ describe('__compareStoredSource (the comparator, directly)', () => {
 });
 
 describe('skill shape', () => {
-  it('exposes exactly the five artifact tools (list is delegated to kv-memory)', () => {
+  it('exposes document and versioned design tools (artifact catalog is delegated to kv-memory)', () => {
     expect(artifactSkill.id).toBe('artifact');
     expect(artifactSkill.tools.map((t) => t.name).sort()).toEqual([
-      'artifact_get', 'artifact_publish', 'artifact_share', 'artifact_unshare', 'artifact_update',
+      'artifact_get', 'artifact_publish', 'artifact_restore', 'artifact_share', 'artifact_unshare', 'artifact_update', 'artifact_versions',
     ]);
     expect(artifactSkill.allowedTools).toContain('mcp__artifact__*');
   });

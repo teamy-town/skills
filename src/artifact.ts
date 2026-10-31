@@ -1,4 +1,5 @@
 import { SKILL_META } from '@zibby/skill-ids';
+import { designProperties, designVersionProperty, designTools, isDesignCall, handleDesignTool, designClient, designError } from './artifactDesign.js';
 /**
  * artifact.js — publish a self-contained, shareable HTML/Markdown page.
  *
@@ -719,13 +720,13 @@ async function verifyStoredSource(id, sent) {
  * the original creation time. Best-effort caller: publish/update surface the
  * error but the blob is already written.
  */
-async function indexStore(id, record) {
+async function indexStore(id, record, namespace = artifactOwnerNamespace()) {
   const session = getSessionToken();
   if (!session) return; // no run credential → nothing to index against
   const res = await fetchWithDeadline(`${getAccountApiUrl()}/credits/review-memory`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ op: 'store', scope: indexScope(id), content: JSON.stringify(record) }),
+    body: JSON.stringify({ op: 'store', scope: `${namespace}:artifact:${id}`, content: JSON.stringify(record) }),
   }, { kind: 'api', what: 'artifact index store' });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
@@ -734,7 +735,7 @@ async function indexStore(id, record) {
 }
 
 /** Recall the existing index record for `id` (returns the parsed object or null). */
-async function indexRecall(id) {
+async function indexRecall(id, { strict = false } = {}) {
   const session = getSessionToken();
   if (!session) return null;
   const res = await fetchWithDeadline(`${getAccountApiUrl()}/credits/review-memory`, {
@@ -742,10 +743,22 @@ async function indexRecall(id) {
     headers: { Authorization: `Bearer ${session}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ op: 'recall', scope: indexScope(id) }),
   }, { kind: 'api', what: 'artifact index recall' });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    if (strict) throw new Error('Existing artifact index unavailable');
+    return null;
+  }
   const data = await res.json().catch(() => null);
+  if (strict && (!data || typeof data.found !== 'boolean')) throw new Error('Invalid artifact index receipt');
+  if (strict && data.found && !data.memory?.content) throw new Error('Missing existing artifact index');
   if (!data?.found || !data?.memory?.content) return null;
-  try { return JSON.parse(data.memory.content); } catch { return null; }
+  try {
+    const record = JSON.parse(data.memory.content);
+    if (strict && (!record || typeof record !== 'object' || Array.isArray(record))) throw new Error('Invalid existing artifact index');
+    return record;
+  } catch {
+    if (strict) throw new Error('Invalid existing artifact index');
+    return null;
+  }
 }
 
 /**
@@ -878,7 +891,7 @@ Tools:
       // this codebase: github, gitlab, and lark twice).
       // `WORKFLOW_TYPE` is the kv index namespace (see agentNamespace()).
       'PROJECT_API_TOKEN', 'ZIBBY_ACCOUNT_API_URL', 'ZIBBY_ENV', 'ZIBBY_PROD_ACCOUNT_API_URL', 'ZIBBY_USER_TOKEN',
-      'WORKFLOW_TYPE',
+      'WORKFLOW_TYPE', ARTIFACT_OWNER_ENV,
     ]) {
       if (process.env[key]) env[key] = process.env[key];
     }
@@ -895,6 +908,11 @@ Tools:
 
   async handleToolCall(name, args) {
     try {
+      if (isDesignCall(name, args)) {
+        try {
+          return JSON.stringify(await handleDesignTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken(), indexRecall, indexStore, ownerNamespace: artifactOwnerNamespace() }));
+        } catch (error) { return JSON.stringify(designError(error)); }
+      }
       switch (name) {
         case 'artifact_publish': {
           if (consecutiveRejections >= MAX_PUBLISH_ATTEMPTS) return budgetExhausted('Publish budget already spent this turn.', []);
@@ -1071,6 +1089,11 @@ Tools:
           const id = typeof args?.id === 'string' ? args.id.trim() : '';
           if (!id) return JSON.stringify({ error: 'id is required' });
           const data = await artifactReadFetch(id); // { metadata, content }
+          // A latest design receipt carries object capabilities, not legacy source. Hydrate through the shared client.
+          if (data?.snapshot && data?.revision && data?.artifactId) {
+            try { return JSON.stringify(await designClient({ baseUrl: getAccountApiUrl(), token: getSessionToken() }).get(id)); }
+            catch (error) { return JSON.stringify(designError(error)); }
+          }
           return JSON.stringify(data);
         }
 
@@ -1108,9 +1131,12 @@ Tools:
   },
 
   tools: [
+    ...designTools,
     {
       name: 'artifact_publish',
       description:
+        'For a versioned design pass artifactType:"design", projectId and design (a full shared snapshot); initial publish generates only missing artboard IDs. Design calls exclude document/text/data/share fields. Confirmed commit and readBack are separate: recover a read-back failure with a fixed-version artifact_get, never replay the write. '
+        +
         'Publish a NEW self-contained, shareable page (report/plan/table/dashboard/diagram/write-up) and get back a shareable URL. '
         + 'USE `markdown` — it is the default path and Zibby generates the entire document for you (doctype, head, CSS, dark mode, table styling); you supply only the content, so the page cannot come out malformed. '
         + `Markdown supports ${MARKDOWN_SUPPORTS}; it does NOT support ${MARKDOWN_LACKS}. `
@@ -1128,6 +1154,7 @@ Tools:
       input_schema: {
         type: 'object',
         properties: {
+          ...designProperties,
           title: { type: 'string', description: `The page title (also the browser tab title). ${ARTIFACT_TITLE_RULE}` },
           markdown: { type: 'string', description: `PREFERRED. The page content as Markdown — Zibby renders it into a styled, self-contained document, so you never author a skeleton. Supports ${MARKDOWN_SUPPORTS}. Does NOT support ${MARKDOWN_LACKS}. Provide this OR html, never both.` },
           html: { type: 'string', description: 'The EXCEPTION path — only for a layout Markdown cannot express (bar chart, gauge, custom grid, SVG diagram). A self-contained HTML document or fragment, served VERBATIM: you own the doctype, head, CSS and every tag. All assets must be inline (<style>/<script>, data: URIs). Provide this OR markdown, never both.' },
@@ -1146,12 +1173,15 @@ Tools:
     {
       name: 'artifact_update',
       description:
+        'For designs pass artifactType:"design", projectId, baseVersion, summary and exactly one of design (full replacement keeping IDs) or operations (shared patch operations). Returns commit/version facts and separate readBack. Never replay a committed write after a download failure. '
+        +
         'Revise an EXISTING artifact by id — the shareable URL stays the same, the content is replaced (new version). Pass the fields to change (title and/or markdown|html|text). '
         + '`text` only replaces an artifact that was PUBLISHED as text, and it keeps its original contentType — the server refuses a type change and any doc↔text conversion. '
         + 'Prefer `markdown` for the same reason artifact_publish does: Zibby generates the document, so it cannot come out malformed. An update is validated exactly like a publish — including the optional `data` check when you send new `html` that renders a dataset — and if the new content is broken it is REFUSED, the page keeps its last good version, and the rejection shares the same two attempts as publish. Returns { id, url }.',
       input_schema: {
         type: 'object',
         properties: {
+          ...designProperties,
           id: { type: 'string', description: 'The id of the artifact to update (from a prior artifact_publish, or your kv-memory "artifact:" index).' },
           title: { type: 'string', description: 'New title (optional).' },
           markdown: { type: 'string', description: `PREFERRED. New Markdown content (optional) — Zibby renders the document skeleton. Supports ${MARKDOWN_SUPPORTS}. Provide this OR html.` },
@@ -1168,10 +1198,12 @@ Tools:
     },
     {
       name: 'artifact_get',
-      description: 'Fetch ONE artifact you published, by id → { metadata, content }. Use to reuse / edit / re-publish a page. To LIST what you have published, use your kv-memory tool kv_recall_prefix with keyPrefix "artifact:" — each entry is the index record { id, title, url, kind, createdAt, summary } for a page you made. (Publishing records this automatically; you don\'t store it yourself.)',
+      description: 'For designs pass artifactType:"design" and optional version: returns every artboard HTML and position, artifact and immutable revision metadata. Omit version for latest. A fixed version also recovers source after a confirmed write whose readBack failed. Fetch ONE legacy artifact by id → { metadata, content }. To LIST what you published use kv_recall_prefix with keyPrefix "artifact:"; index records are written automatically.',
       input_schema: {
         type: 'object',
         properties: {
+          artifactType: designProperties.artifactType,
+          version: designVersionProperty,
           id: { type: 'string', description: 'The artifact id.' },
         },
         required: ['id'],

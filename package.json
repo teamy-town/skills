@@ -124,6 +124,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@zibby/artifact-contracts": "2.0.29",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@resvg/resvg-js": "^2.6.2",
     "@zibby/agent-workflow": "2.0.29",
