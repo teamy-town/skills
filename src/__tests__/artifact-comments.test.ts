@@ -6,6 +6,9 @@ import { createCommentMock, commentAnchorFixtures, commentRequestFixtures, comme
 import { artifactSkill, __resetPublishBudget } from '../artifact.js';
 import { handleSharedSkillRequest } from '../sharedMcpServer.js';
 
+// Tests never inspect a developer's real CLI session when testing missing auth.
+vi.mock('node:os', async importOriginal => ({ ...await importOriginal(), homedir: () => '/nonexistent/artifact-comment-tests' }));
+
 const clone = x => JSON.parse(JSON.stringify(x));
 const call = async (name, args) => JSON.parse(await artifactSkill.handleToolCall(name, args));
 const accountId = 'mock-account', projectId = 'mock-project';
@@ -30,6 +33,7 @@ const all = async (name, args) => {
 
 beforeEach(() => {
   vi.stubEnv('PROJECT_API_TOKEN', 'mock-token');
+  vi.stubEnv('ZIBBY_USER_TOKEN', '');
   vi.stubEnv('ZIBBY_ACCOUNT_API_URL', 'https://api.mock.invalid');
   vi.stubEnv('WORKFLOW_TYPE', 'third-party-agent');
   __resetPublishBudget(); revisions = new Map(); requests = []; sent = []; fault = undefined;
@@ -139,6 +143,7 @@ describe('shared comment contract through the generic artifact capability', () =
     const receipt = comments.writeback(replyTo, { replyReceiptId: event.replyReceiptId, text: '实际最终回答' }, trusted);
     expect((await call('artifact_comments', { id: v1.id })).items[0].delivery).toMatchObject({ status: 'answered', executionId: 'actual-execution', replyId: receipt.replyId });
     expect((await call('artifact_comment_replies', { id: v1.id, commentId: seeded[0].id })).items[0]).toMatchObject({ id: receipt.replyId, replyReceiptId: event.replyReceiptId, executionId: 'actual-execution', seq: 1, text: '实际最终回答' });
+    expect((await call('artifact_comments', { id: v1.id })).items[0].resolution).toEqual(seeded[0].resolution);
   });
 
   it('reuses the same reply on an identical retry and preserves idempotency conflicts', async () => {
