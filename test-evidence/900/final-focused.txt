@@ -1,0 +1,28 @@
+
+> @zibby/skills@2.0.29 test
+> vitest run src/__tests__/artifact-comments.test.ts src/__tests__/artifact-design.test.ts src/__tests__/artifact.test.ts src/__tests__/artifact-preflight.test.ts src/__tests__/artifact-description.test.ts src/__tests__/backend-session-env-contract.test.ts src/__tests__/sharedMcpServer.test.ts src/__tests__/sharedSkillModules.test.ts src/__tests__/skills-http-doors-bounded.test.ts
+
+Error opening /private/var/select/sh: Operation not permitted
+
+ RUN  v4.1.12 /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032
+
+8:25:53 AM [vite] (ssr) warning: invalid import "../${f.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:25:53 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:25:53 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:25:53 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:25:53 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+
+ Test Files  9 passed (9)
+      Tests  263 passed (263)
+   Start at  08:25:52
+   Duration  2.57s (transform 4.93s, setup 0ms, import 9.26s, tests 2.21s, environment 3ms)

@@ -1,0 +1,40 @@
+
+> @zibby/skills@2.0.29 lint
+> eslint .
+
+Error opening /private/var/select/sh: Operation not permitted
+
+/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills/sidecars/gbrain/brain.js
+    37:10  warning  'tmpdir' is defined but never used. Allowed unused vars must match /^_/u             no-unused-vars
+   250:7   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+   305:7   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+   384:5   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+   479:5   warning  Unused eslint-disable directive (no problems were reported from 'no-cond-assign')
+   577:5   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+   708:5   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+   710:5   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+   723:5   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+   747:5   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+   873:3   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+   963:5   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  1002:5   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  1145:5   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  1414:7   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+  1445:9   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  1550:7   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+  1621:7   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+  1625:9   warning  Unused eslint-disable directive (no problems were reported from 'no-await-in-loop')
+
+/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills/sidecars/gbrain/server.js
+  344:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  352:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills/src/lib/repo-access.js
+  233:7  error  The value assigned to 'host' is not used in subsequent statements      no-useless-assignment
+  234:7  error  The value assigned to 'pathname' is not used in subsequent statements  no-useless-assignment
+
+/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills/test/googleDocs.test.js
+  327:46  warning  'opts' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+✖ 24 problems (2 errors, 22 warnings)
+  0 errors and 20 warnings potentially fixable with the `--fix` option.

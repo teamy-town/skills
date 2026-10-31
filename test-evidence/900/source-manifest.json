@@ -1,0 +1,14 @@
+{
+  "sourceCommit": "8fb869b79ce22e71b45fa1a8d0777fe22cf0fdec",
+  "base": "2cad15c29e3def8de4e7473efda36c98e18fdbe0",
+  "packagesCommit": "9c562b5d8ff3801c1373203173c584d4bb64bb56",
+  "workflowCommit": "00eff2d6aa9a88a713729d7875977579e88806ae",
+  "files": {
+    "src/artifact.ts": "4a0700fe0e65b035164bd249d3447043eef5f714150032143a4a3feb7289cec4",
+    "src/artifactComments.ts": "fe54aacaa7316d3e047199b7e780b022cd17f3db9c723cb5b35617bcf6d977f5",
+    "src/__tests__/artifact-comments.test.ts": "f29a1c734b4237ac0e6d55873eed38e9fcfd1a207ff0b1c9eaa3643f960a5274",
+    "src/__tests__/artifact.test.ts": "20b14c66ac9f32ce0cdc8d312f82fa51be43734cad7d45e9d1cd79dc0e752356",
+    "scripts/setup-artifact-tests.mjs": "257d318ce1e953aef4784453528cef4516f9ee11387f37fe64570702b919df6e",
+    "package.json": "060249dcf4690ab1699046816c262ca5be80f8e8d4c1b04f8d4cdb8f35fe3590"
+  }
+}

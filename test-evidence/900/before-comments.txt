@@ -1,0 +1,657 @@
+
+> @zibby/skills@2.0.29 test
+> vitest run src/__tests__/artifact-comments.test.ts
+
+Error opening /private/var/select/sh: Operation not permitted
+
+ RUN  v4.1.12 /Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills
+
+ ❯ src/__tests__/artifact-comments.test.ts (32 tests | 32 failed) 106ms
+     × returns one honest page, then cursor consumers read full roots/replies, original versions and all anchor kinds 26ms
+     × reads original discussion/design, changes only the requested board, replies with the confirmed V2 receipt to that thread, never resolves 5ms
+     × retains a deleted board pin on V1 and can reply after V2 removes the board 8ms
+     × lets a different authorized comment member explicitly resolve/reopen; replies preserve either state and all contents 4ms
+     × preserves actual pending/failed/answered delivery facts and service-generated final reply receipts 5ms
+     × reuses the same reply on an identical retry and preserves idempotency conflicts 4ms
+     × does not authorize matching names, @ text or external passwords: outsider-session 3ms
+     × does not authorize matching names, @ text or external passwords: external-password 3ms
+     × rejects caller supplied author via the shared request schema before transport 2ms
+     × rejects caller supplied accountId via the shared request schema before transport 1ms
+     × rejects caller supplied projectId via the shared request schema before transport 1ms
+     × rejects caller supplied role via the shared request schema before transport 1ms
+     × rejects caller supplied token via the shared request schema before transport 0ms
+     × rejects caller supplied commentReplyTo via the shared request schema before transport 0ms
+     × requires an explicit boolean resolved=undefined 0ms
+     × requires an explicit boolean resolved=true 0ms
+     × requires an explicit boolean resolved=null 0ms
+     × rejects malformed page query {"limit":0} 0ms
+     × rejects malformed page query {"limit":101} 0ms
+     × rejects malformed page query {"limit":1.2} 0ms
+     × rejects malformed page query {"cursor":""} 0ms
+     × does not invent completeness or a write receipt from malformed success bodies 0ms
+     × preserves missing threads, unverified versions and cross-thread cursor failures without writing 4ms
+     × keeps backend FORBIDDEN and its specific reason 0ms
+     × keeps backend VERSION_NOT_FOUND and its specific reason 0ms
+     × keeps backend ARTBOARD_NOT_FOUND and its specific reason 0ms
+     × keeps backend TARGET_UNAVAILABLE and its specific reason 0ms
+     × keeps backend COMMENTS_NOT_STARTED and its specific reason 0ms
+     × handles legacy/non-JSON errors and transport failure without exposing capabilities 0ms
+     × uses shared route encoding and the existing session, without putting identity in command JSON 0ms
+     × requires an existing backend session 0ms
+   × exposes the four comment tools to any agent through existing artifact MCP, with explicit-only state semantics 33ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 32 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > shared comment contract through the generic artifact capability > returns one honest page, then cursor consumers read full roots/replies, original versions and all anchor kinds
+AssertionError: Target cannot be null or undefined.
+ ❯ src/__tests__/artifact-comments.test.ts:79:24
+     77|     requests = [];
+     78|     const page = await call('artifact_comments', { id: v1.id, limit: 1…
+     79|     expect(page.items).toHaveLength(1); expect(page.nextCursor).toBeTy…
+       |                        ^
+     80|     expect(requests[0].headers.get('authorization')).toBe('Bearer mock…
+     81|     const loaded = await all('artifact_comments', { id: v1.id });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > shared comment contract through the generic artifact capability > reads original discussion/design, changes only the requested board, replies with the confirmed V2 receipt to that thread, never resolves
+TypeError: Cannot read properties of undefined (reading '0')
+ ❯ src/__tests__/artifact-comments.test.ts:92:76
+     90|     const unrelated = seed(v1.id, 'unrelated');
+     91|     const page = await call('artifact_comments', { id: v1.id });
+     92|     const original = await call('artifact_get', { id: v1.id, version: …
+       |                                                                            ^
+     93|     expect(original.revision.snapshot).toEqual(threeArtboards);
+     94|     const v2 = remember(await call('artifact_update', { id: v1.id, art…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > shared comment contract through the generic artifact capability > retains a deleted board pin on V1 and can reply after V2 removes the board
+AssertionError: expected undefined to deeply equal [ { id: 'comment-1', …(10) } ]
+
+- Expected:
+[
+  {
+    "anchor": {
+      "artboardId": "board-3",
+      "type": "artboard",
+      "version": 1,
+      "x": 18.5,
+      "y": 42,
+    },
+    "artifactId": "mock-design-1",
+    "author": {
+      "id": "member-1",
+      "kind": "person",
+      "name": "同名成员",
+    },
+    "createdAt": "2026-10-31T08:01:00.000Z",
+    "delivery": {
+      "status": "saved",
+    },
+    "id": "comment-1",
+    "replyCount": 0,
+    "resolution": {
+      "changedAt": "2026-10-31T08:01:00.000Z",
+      "changedBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "resolved": false,
+    },
+    "sourceRevisionId": "mock-revision-1",
+    "sourceVersion": 1,
+    "text": "这里需要调整 @任意名字",
+  },
+]
+
++ Received:
+undefined
+
+ ❯ src/__tests__/artifact-comments.test.ts:111:68
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > shared comment contract through the generic artifact capability > lets a different authorized comment member explicitly resolve/reopen; replies preserve either state and all contents
+TypeError: Cannot read properties of undefined (reading 'resolution')
+ ❯ src/__tests__/artifact-comments.test.ts:121:29
+    119|     vi.stubEnv('PROJECT_API_TOKEN', 'other-member-session');
+    120|     const resolved = await call('artifact_comment_resolve', { id: v1.i…
+    121|     expect(resolved.comment.resolution).toMatchObject({ resolved: true…
+       |                             ^
+    122|     await call('artifact_comment_reply', { id: v1.id, commentId: root.…
+    123|     expect((await call('artifact_comments', { id: v1.id })).items[0].r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > shared comment contract through the generic artifact capability > preserves actual pending/failed/answered delivery facts and service-generated final reply receipts
+AssertionError: expected undefined to deeply equal [ { id: 'comment-1', …(10) }, …(2) ]
+
+- Expected:
+[
+  {
+    "anchor": {
+      "type": "canvas",
+      "version": 1,
+      "x": -420,
+      "y": -20,
+    },
+    "artifactId": "mock-design-1",
+    "author": {
+      "id": "member-1",
+      "kind": "person",
+      "name": "同名成员",
+    },
+    "createdAt": "2026-10-31T08:01:00.000Z",
+    "delivery": {
+      "accountId": "mock-account",
+      "artifactId": "mock-design-1",
+      "commentId": "comment-1",
+      "createdAt": "2026-10-31T08:01:00.000Z",
+      "createdBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "deliveryId": "delivery-2",
+      "inboxMessageId": "inbox-delivery-2",
+      "projectId": "mock-project",
+      "queueReason": "already-awake",
+      "sourceRevisionId": "mock-revision-1",
+      "sourceVersion": 1,
+      "status": "pending",
+      "target": {
+        "accountId": "mock-account",
+        "projectId": "mock-project",
+        "workflowUuid": "selected",
+      },
+    },
+    "id": "comment-1",
+    "replyCount": 0,
+    "resolution": {
+      "changedAt": "2026-10-31T08:01:00.000Z",
+      "changedBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "resolved": false,
+    },
+    "sourceRevisionId": "mock-revision-1",
+    "sourceVersion": 1,
+    "text": "请调整这里",
+  },
+  {
+    "anchor": {
+      "type": "canvas",
+      "version": 1,
+      "x": -420,
+      "y": -20,
+    },
+    "artifactId": "mock-design-1",
+    "author": {
+      "id": "member-1",
+      "kind": "person",
+      "name": "同名成员",
+    },
+    "createdAt": "2026-10-31T08:01:00.000Z",
+    "delivery": {
+      "accountId": "mock-account",
+      "artifactId": "mock-design-1",
+      "commentId": "comment-3",
+      "createdAt": "2026-10-31T08:01:00.000Z",
+      "createdBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "deliveryId": "delivery-4",
+      "failure": {
+        "code": "TARGET_UNAVAILABLE",
+        "message": "所选 agent 已删除，无法投递",
+      },
+      "projectId": "mock-project",
+      "sourceRevisionId": "mock-revision-1",
+      "sourceVersion": 1,
+      "status": "failed",
+      "target": {
+        "accountId": "mock-account",
+        "projectId": "mock-project",
+        "workflowUuid": "unavailable",
+      },
+    },
+    "id": "comment-3",
+    "replyCount": 0,
+    "resolution": {
+      "changedAt": "2026-10-31T08:01:00.000Z",
+      "changedBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "resolved": false,
+    },
+    "sourceRevisionId": "mock-revision-1",
+    "sourceVersion": 1,
+    "text": "请调整这里",
+  },
+  {
+    "anchor": {
+      "type": "canvas",
+      "version": 1,
+      "x": -420,
+      "y": -20,
+    },
+    "artifactId": "mock-design-1",
+    "author": {
+      "id": "member-1",
+      "kind": "person",
+      "name": "同名成员",
+    },
+    "createdAt": "2026-10-31T08:01:00.000Z",
+    "delivery": {
+      "accountId": "mock-account",
+      "artifactId": "mock-design-1",
+      "commentId": "comment-5",
+      "createdAt": "2026-10-31T08:01:00.000Z",
+      "createdBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "deliveryId": "delivery-6",
+      "failure": {
+        "code": "DELIVERY_REJECTED",
+        "message": "Existing inbox rejected delivery",
+      },
+      "projectId": "mock-project",
+      "sourceRevisionId": "mock-revision-1",
+      "sourceVersion": 1,
+      "status": "failed",
+      "target": {
+        "accountId": "mock-account",
+        "projectId": "mock-project",
+        "workflowUuid": "rejected",
+      },
+    },
+    "id": "comment-5",
+    "replyCount": 0,
+    "resolution": {
+      "changedAt": "2026-10-31T08:01:00.000Z",
+      "changedBy": {
+        "id": "member-1",
+        "kind": "person",
+        "name": "同名成员",
+      },
+      "resolved": false,
+    },
+    "sourceRevisionId": "mock-revision-1",
+    "sourceVersion": 1,
+    "text": "请调整这里",
+  },
+]
+
++ Received:
+undefined
+
+ ❯ src/__tests__/artifact-comments.test.ts:132:68
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > shared comment contract through the generic artifact capability > reuses the same reply on an identical retry and preserves idempotency conflicts
+AssertionError: expected { Object (error) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "duplicate": true,
+    "error": "Unknown tool: artifact_comment_reply",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:148:23
+    146|     const args = { id: v1.id, commentId: root.id, idempotencyKey: 'ret…
+    147|     const first = await call('artifact_comment_reply', args), duplicat…
+    148|     expect(duplicate).toEqual({ ...first, duplicate: true });
+       |                       ^
+    149|     expect(await call('artifact_comment_reply', { ...args, text: '不同内容…
+    150|     expect((await call('artifact_comment_replies', { id: v1.id, commen…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > does not authorize matching names, @ text or external passwords: outsider-session
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > does not authorize matching names, @ text or external passwords: external-password
+AssertionError: expected { Object (error) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "code": "FORBIDDEN",
+-   "error": "Artifact access is not authorized",
+-   "status": 403,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:159:38
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects caller supplied author via the shared request schema before transport
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects caller supplied accountId via the shared request schema before transport
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects caller supplied projectId via the shared request schema before transport
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects caller supplied role via the shared request schema before transport
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects caller supplied token via the shared request schema before transport
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects caller supplied commentReplyTo via the shared request schema before transport
+AssertionError: expected { Object (error) } to match object { code: 'INVALID_STRUCTURE', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "Unknown tool: artifact_comment_reply",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:165:17
+    163|   it.each(['author', 'accountId', 'projectId', 'role', 'token', 'comme…
+    164|     const out = await call('artifact_comment_reply', { id: 'id', comme…
+    165|     expect(out).toMatchObject({ code: 'INVALID_STRUCTURE', status: 400…
+       |                 ^
+    166|   });
+    167|   it.each([undefined, 'true', null])('requires an explicit boolean res…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > requires an explicit boolean resolved=undefined
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > requires an explicit boolean resolved=true
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > requires an explicit boolean resolved=null
+AssertionError: expected { Object (error) } to match object { code: 'INVALID_STRUCTURE', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "Unknown tool: artifact_comment_resolve",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:168:95
+    166|   });
+    167|   it.each([undefined, 'true', null])('requires an explicit boolean res…
+    168|     expect(await call('artifact_comment_resolve', { id: 'id', commentI…
+       |                                                                                               ^
+    169|   });
+    170|   it.each([{ limit: 0 }, { limit: 101 }, { limit: 1.2 }, { cursor: '' …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects malformed page query {"limit":0}
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects malformed page query {"limit":101}
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects malformed page query {"limit":1.2}
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > rejects malformed page query {"cursor":""}
+AssertionError: expected { Object (error) } to match object { code: 'INVALID_STRUCTURE', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:171:69
+    169|   });
+    170|   it.each([{ limit: 0 }, { limit: 101 }, { limit: 1.2 }, { cursor: '' …
+    171|     expect(await call('artifact_comments', { id: 'id', ...query })).to…
+       |                                                                     ^
+    172|   });
+    173|   it('does not invent completeness or a write receipt from malformed s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > does not invent completeness or a write receipt from malformed success bodies
+AssertionError: expected { Object (error) } to match object { code: 'INVALID_COMMENT_RESPONSE' }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_COMMENT_RESPONSE",
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:175:59
+    173|   it('does not invent completeness or a write receipt from malformed s…
+    174|     fault = () => Response.json({ items: [] });
+    175|     expect(await call('artifact_comments', { id: 'id' })).toMatchObjec…
+       |                                                           ^
+    176|     fault = () => Response.json({ reply: { text: 'unverified' }, dupli…
+    177|     expect(await call('artifact_comment_reply', { id: 'id', commentId:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > preserves missing threads, unverified versions and cross-thread cursor failures without writing
+AssertionError: expected { Object (error) } to deeply equal { Object (code, status, ...) }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "error": "Comment not found in authorized artifact",
+-   "status": 404,
++   "error": "Unknown tool: artifact_comment_replies",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:181:88
+    179|   it('preserves missing threads, unverified versions and cross-thread …
+    180|     const v1 = await create(); const root = seed(v1.id), other = seed(…
+    181|     expect(await call('artifact_comment_replies', { id: v1.id, comment…
+       |                                                                                        ^
+    182|     expect(await call('artifact_comments', { id: v1.id, cursor: 'inven…
+    183|     for (const designVersion of [{ ...reference(v1), version: 999 }, {…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > keeps backend FORBIDDEN and its specific reason
+AssertionError: expected { Object (error) } to deeply equal { error: '具体原因：FORBIDDEN', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "code": "FORBIDDEN",
+-   "error": "具体原因：FORBIDDEN",
+-   "status": 403,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:193:59
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > keeps backend VERSION_NOT_FOUND and its specific reason
+AssertionError: expected { Object (error) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "code": "VERSION_NOT_FOUND",
+-   "error": "具体原因：VERSION_NOT_FOUND",
+-   "status": 404,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:193:59
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > keeps backend ARTBOARD_NOT_FOUND and its specific reason
+AssertionError: expected { Object (error) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "code": "ARTBOARD_NOT_FOUND",
+-   "error": "具体原因：ARTBOARD_NOT_FOUND",
+-   "status": 404,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:193:59
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > keeps backend TARGET_UNAVAILABLE and its specific reason
+AssertionError: expected { Object (error) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "code": "TARGET_UNAVAILABLE",
+-   "error": "具体原因：TARGET_UNAVAILABLE",
+-   "status": 422,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:193:59
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > keeps backend COMMENTS_NOT_STARTED and its specific reason
+AssertionError: expected { Object (error) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "code": "COMMENTS_NOT_STARTED",
+-   "error": "具体原因：COMMENTS_NOT_STARTED",
+-   "status": 503,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:193:59
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > handles legacy/non-JSON errors and transport failure without exposing capabilities
+AssertionError: expected { Object (error) } to deeply equal { error: '服务尚未启动', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "code": "COMMENTS_NOT_STARTED",
+-   "error": "服务尚未启动",
+-   "status": 503,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:197:59
+    195|   it('handles legacy/non-JSON errors and transport failure without exp…
+    196|     fault = () => Response.json({ error: '服务尚未启动', code: 'COMMENTS_NOT…
+    197|     expect(await call('artifact_comments', { id: 'id' })).toEqual({ er…
+       |                                                           ^
+    198|     fault = () => new Response('unavailable', { status: 503 });
+    199|     expect(await call('artifact_comments', { id: 'id' })).toMatchObjec…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > uses shared route encoding and the existing session, without putting identity in command JSON
+AssertionError: expected { Object (error) } to deeply equal { items: [], nextCursor: null }
+
+- Expected
++ Received
+
+  {
+-   "items": [],
+-   "nextCursor": null,
++   "error": "Unknown tool: artifact_comment_replies",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:208:58
+    206|     fault = () => Response.json({ items: [], nextCursor: null });
+    207|     const args = { id: 'a/b?#中', commentId: 'c/d?#文', cursor: 'opaque+…
+    208|     expect(await call('artifact_comment_replies', args)).toEqual({ ite…
+       |                                                          ^
+    209|     expect(requests[0].url).toBe(`https://api.mock.invalid${routes.rep…
+    210|     expect(requests[0].headers.get('authorization')).toBe('Bearer mock…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > comment boundaries and precise failures > requires an existing backend session
+AssertionError: expected { Object (error) } to match object { Object (code, status) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "UNAUTHENTICATED",
+-   "status": 401,
++   "error": "Unknown tool: artifact_comments",
+  }
+
+ ❯ src/__tests__/artifact-comments.test.ts:214:59
+    212|   it('requires an existing backend session', async () => {
+    213|     vi.stubEnv('PROJECT_API_TOKEN', '');
+    214|     expect(await call('artifact_comments', { id: 'id' })).toMatchObjec…
+       |                                                           ^
+    215|   });
+    216| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/32]⎯
+
+ FAIL  src/__tests__/artifact-comments.test.ts > exposes the four comment tools to any agent through existing artifact MCP, with explicit-only state semantics
+AssertionError: expected [ 'artifact_versions', …(7) ] to deeply equal ArrayContaining{…}
+
+- Expected
++ Received
+
+- ArrayContaining [
+-   "artifact_comments",
+-   "artifact_comment_replies",
+-   "artifact_comment_reply",
+-   "artifact_comment_resolve",
++ [
++   "artifact_versions",
++   "artifact_restore",
++   "artifact_publish",
++   "artifact_update",
++   "artifact_open",
++   "artifact_get",
++   "artifact_share",
++   "artifact_unshare",
+  ]
+
+ ❯ src/__tests__/artifact-comments.test.ts:227:35
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/32]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  32 failed (32)
+   Start at  08:23:08
+   Duration  662ms (transform 204ms, setup 0ms, import 371ms, tests 106ms, environment 0ms)

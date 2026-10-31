@@ -1,0 +1,61 @@
+
+> @zibby/skills@2.0.29 test
+> vitest run src/__tests__/artifact-comments.test.ts src/__tests__/artifact-design.test.ts src/__tests__/artifact.test.ts src/__tests__/artifact-preflight.test.ts src/__tests__/artifact-description.test.ts src/__tests__/backend-session-env-contract.test.ts src/__tests__/sharedMcpServer.test.ts src/__tests__/sharedSkillModules.test.ts src/__tests__/skills-http-doors-bounded.test.ts
+
+Error opening /private/var/select/sh: Operation not permitted
+
+ RUN  v4.1.12 /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032
+
+8:22:54 AM [vite] (ssr) warning: invalid import "../${f.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:22:54 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:22:54 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:22:54 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+8:22:54 AM [vite] (ssr) warning: invalid import "../${file.replace(/\.ts$/, "")}". A file extension must be included in the static part of the import. For example: import(`./foo/${bar}.js`).
+  Plugin: vite:dynamic-import-vars
+  File: /Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032/src/__tests__/backend-session-env-contract.test.ts
+ ❯ src/__tests__/artifact.test.ts (61 tests | 1 failed) 310ms
+     × exposes document and versioned design tools (artifact catalog is delegated to kv-memory) 16ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/artifact.test.ts > skill shape > exposes document and versioned design tools (artifact catalog is delegated to kv-memory)
+AssertionError: expected [ 'artifact_comment_replies', …(11) ] to deeply equal [ 'artifact_get', …(7) ]
+
+- Expected
++ Received
+
+@@ -1,6 +1,10 @@
+  [
++   "artifact_comment_replies",
++   "artifact_comment_reply",
++   "artifact_comment_resolve",
++   "artifact_comments",
+    "artifact_get",
+    "artifact_open",
+    "artifact_publish",
+    "artifact_restore",
+    "artifact_share",
+
+ ❯ src/__tests__/artifact.test.ts:758:59
+    756|   it('exposes document and versioned design tools (artifact catalog is…
+    757|     expect(artifactSkill.id).toBe('artifact');
+    758|     expect(artifactSkill.tools.map((t) => t.name).sort()).toEqual([
+       |                                                           ^
+    759|       'artifact_get', 'artifact_open', 'artifact_publish', 'artifact_r…
+    760|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 8 passed (9)
+      Tests  1 failed | 262 passed (263)
+   Start at  08:22:54
+   Duration  2.42s (transform 5.62s, setup 0ms, import 10.78s, tests 2.84s, environment 1ms)

@@ -1,0 +1,162 @@
+[
+  {
+    "label": "before-comments",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-comments.test.ts"
+    ],
+    "commit": "2cad15c29e3def8de4e7473efda36c98e18fdbe0",
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills",
+    "seconds": 1.396,
+    "exitCode": 1,
+    "log": "before-comments.txt",
+    "testOverlayFrom": "43c1181abaff7083ad1af4f00ce48ff7af7c5155"
+  },
+  {
+    "label": "before-lint",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "commit": "2cad15c29e3def8de4e7473efda36c98e18fdbe0",
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills",
+    "seconds": 1.728,
+    "exitCode": 1,
+    "log": "before-lint.txt"
+  },
+  {
+    "label": "before-types",
+    "command": [
+      "npm",
+      "run",
+      "build:types"
+    ],
+    "commit": "2cad15c29e3def8de4e7473efda36c98e18fdbe0",
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills",
+    "seconds": 3.637,
+    "exitCode": 2,
+    "log": "before-types.txt"
+  },
+  {
+    "label": "candidate-build",
+    "command": [
+      "node",
+      "/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/dependency-tree/scripts/build.mjs"
+    ],
+    "commit": "43c1181abaff7083ad1af4f00ce48ff7af7c5155",
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032",
+    "seconds": 0.178,
+    "exitCode": 0,
+    "log": "candidate-build.txt"
+  },
+  {
+    "label": "candidate-lint",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "commit": "43c1181abaff7083ad1af4f00ce48ff7af7c5155",
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032",
+    "seconds": 3.025,
+    "exitCode": 1,
+    "log": "candidate-lint.txt"
+  },
+  {
+    "label": "candidate-types",
+    "command": [
+      "npm",
+      "run",
+      "build:types"
+    ],
+    "commit": "43c1181abaff7083ad1af4f00ce48ff7af7c5155",
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032",
+    "seconds": 3.159,
+    "exitCode": 2,
+    "log": "candidate-types.txt"
+  },
+  {
+    "label": "final-before-comments",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-comments.test.ts"
+    ],
+    "commit": "2cad15c29e3def8de4e7473efda36c98e18fdbe0",
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/1d473ae25c2c61652b435b5d2d6eb37c6fbbc1166d43262537e0e725091b0bea/work/before-skills",
+    "seconds": 2.545,
+    "exitCode": 1,
+    "log": "final-before-comments.txt",
+    "testOverlayFrom": "8fb869b79ce22e71b45fa1a8d0777fe22cf0fdec"
+  },
+  {
+    "label": "final-focused",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-comments.test.ts",
+      "src/__tests__/artifact-design.test.ts",
+      "src/__tests__/artifact.test.ts",
+      "src/__tests__/artifact-preflight.test.ts",
+      "src/__tests__/artifact-description.test.ts",
+      "src/__tests__/backend-session-env-contract.test.ts",
+      "src/__tests__/sharedMcpServer.test.ts",
+      "src/__tests__/sharedSkillModules.test.ts",
+      "src/__tests__/skills-http-doors-bounded.test.ts"
+    ],
+    "commit": "8fb869b79ce22e71b45fa1a8d0777fe22cf0fdec",
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032",
+    "seconds": 3.253,
+    "exitCode": 0,
+    "log": "final-focused.txt"
+  },
+  {
+    "label": "focused",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-comments.test.ts",
+      "src/__tests__/artifact-design.test.ts",
+      "src/__tests__/artifact.test.ts",
+      "src/__tests__/artifact-preflight.test.ts",
+      "src/__tests__/artifact-description.test.ts",
+      "src/__tests__/backend-session-env-contract.test.ts",
+      "src/__tests__/sharedMcpServer.test.ts",
+      "src/__tests__/sharedSkillModules.test.ts",
+      "src/__tests__/skills-http-doors-bounded.test.ts"
+    ],
+    "commit": "43c1181abaff7083ad1af4f00ce48ff7af7c5155",
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032",
+    "seconds": 3.035,
+    "exitCode": 1,
+    "log": "focused.txt"
+  },
+  {
+    "label": "release-focused",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-comments.test.ts",
+      "src/__tests__/artifact-design.test.ts",
+      "src/__tests__/artifact.test.ts",
+      "src/__tests__/artifact-preflight.test.ts",
+      "src/__tests__/artifact-description.test.ts",
+      "src/__tests__/backend-session-env-contract.test.ts",
+      "src/__tests__/sharedMcpServer.test.ts",
+      "src/__tests__/sharedSkillModules.test.ts",
+      "src/__tests__/skills-http-doors-bounded.test.ts"
+    ],
+    "commit": "05a50887be7b9572ad9b7ff3e59a1df74f7a6225",
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/100a934b-69fb-4b9c-b0f5-718e05e2fc56/89bbd46f-9ebb-4820-a182-fc0f1540e032",
+    "seconds": 2.161,
+    "exitCode": 0,
+    "log": "release-focused.txt"
+  }
+]
