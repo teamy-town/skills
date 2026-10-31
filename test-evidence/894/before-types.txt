@@ -1,0 +1,33 @@
+
+> @zibby/skills@2.0.29 build:types
+> tsc -p tsconfig.types.json
+
+src/datasetStore.ts(538,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(538,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(552,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(552,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(578,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(578,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(654,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(654,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(702,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(702,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(713,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(713,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(735,22): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+src/datasetStore.ts(735,67): error TS2339: Property 'error' does not exist on type '{ storeId: any; name: string; error?: undefined; } | { error: string; storeId?: undefined; name?: undefined; } | { storeId: any; name: string; owner: any; }'.
+  Property 'error' does not exist on type '{ storeId: any; name: string; owner: any; }'.
+Error opening /private/var/select/sh: Operation not permitted

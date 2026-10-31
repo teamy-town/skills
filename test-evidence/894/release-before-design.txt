@@ -1,0 +1,453 @@
+
+> @zibby/skills@2.0.29 test
+> vitest run src/__tests__/artifact-design.test.ts
+
+
+ RUN  v4.1.12 /Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/skills-894-before
+
+ ❯ src/__tests__/artifact-design.test.ts (29 tests | 28 failed) 158ms
+     × creates 3 boards, reads all V1 source, patches one into V2, lists history, reads old source and restores as V3 17ms
+     × generates only absent initial board IDs, then keeps those IDs on replacement and rejects missing update IDs 2ms
+     × preserves existing ownership, createdAt and unrelated index metadata through updates and restores 7ms
+     × forwards bound ownership and backend session through the generic resolved skill 3ms
+     × rejects mixed legacy html without making requests 18ms
+     × rejects mixed legacy markdown without making requests 4ms
+     × rejects mixed legacy text without making requests 2ms
+     × rejects mixed legacy data without making requests 1ms
+     × rejects mixed legacy share without making requests 2ms
+     × rejects mixed legacy contentType without making requests 2ms
+     × rejects mixed legacy uploadId without making requests 2ms
+     × rejects full snapshot plus operations and missing discriminator, baseVersion or projectId 1ms
+     × returns server defects per board without applying document preflight or consuming the legacy retry budget 2ms
+     × returns stale base/current version conflict and does not replay or overwrite the index 1ms
+     × uses raw transfers for a near-5MiB escaped snapshot and returns total-byte limit facts for overflow 1ms
+     × 'create' retains receipt/index when download 1 fails; fixed GET recovers without replay 1ms
+     × 'create' retains receipt/index when download 2 fails; fixed GET recovers without replay 1ms
+     × 'replace' retains receipt/index when download 1 fails; fixed GET recovers without replay 1ms
+     × 'replace' retains receipt/index when download 2 fails; fixed GET recovers without replay 0ms
+     × 'patch' retains receipt/index when download 1 fails; fixed GET recovers without replay 6ms
+     × 'patch' retains receipt/index when download 2 fails; fixed GET recovers without replay 1ms
+     × 'restore' retains receipt/index when download 1 fails; fixed GET recovers without replay 1ms
+     × 'restore' retains receipt/index when download 2 fails; fixed GET recovers without replay 1ms
+     × does not claim a commit or update the index when the publish receipt is malformed 2ms
+     × hydrates generic GET through the shared parser even for an incomplete design receipt 1ms
+     × keeps confirmed commit during index recall outage and preserves the old record 1ms
+     × keeps confirmed commit during index store outage and preserves the old record 1ms
+   × an unrelated agent declaring artifact discovers and calls the same design tools through generic MCP 74ms
+
+ Test Files  1 failed (1)
+      Tests  28 failed | 1 passed (29)
+   Start at  04:36:55
+   Duration  1.04s (transform 312ms, setup 0ms, import 560ms, tests 158ms, environment 0ms)
+
+Error opening /private/var/select/sh: Operation not permitted
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 28 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > generic artifact design lifecycle with the 892 transport mock > creates 3 boards, reads all V1 source, patches one into V2, lists history, reads old source and restores as V3
+AssertionError: expected undefined to be true // Object.is equality
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ src/__tests__/artifact-design.test.ts:45:26
+     43|   it('creates 3 boards, reads all V1 source, patches one into V2, list…
+     44|     const v1 = await create();
+     45|     expect(v1.committed).toBe(true);
+       |                          ^
+     46|     expect(v1.commit).toEqual({ artifactId: receipts[0].artifactId, cu…
+     47|     expect(v1.revision.snapshot).toEqual(threeArtboards);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > generic artifact design lifecycle with the 892 transport mock > generates only absent initial board IDs, then keeps those IDs on replacement and rejects missing update IDs
+TypeError: Cannot read properties of undefined (reading 'snapshot')
+ ❯ src/__tests__/artifact-design.test.ts:81:29
+     79|     delete snapshot.artboards[1].id;
+     80|     const v1 = await create({ design: snapshot });
+     81|     const ids = v1.revision.snapshot.artboards.map(b => b.id);
+       |                             ^
+     82|     expect(ids[0]).toBe('board-1'); expect(ids[1]).toMatch(/^[a-f0-9-]…
+     83|     const replacement = clone(v1.revision.snapshot);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > generic artifact design lifecycle with the 892 transport mock > preserves existing ownership, createdAt and unrelated index metadata through updates and restores
+AssertionError: expected { …(3) } to match object { …(5) }
+
+- Expected
++ Received
+
+  {
+    "createdAt": "2025-01-01T00:00:00.000Z",
+-   "currentVersion": 3,
+    "custom": "keep",
+-   "ownerNamespace": "original-owner",
+    "url": "https://viewer.invalid/existing",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:99:30
+     97|     await call('artifact_update', { id: v1.id, artifactType: 'design',…
+     98|     await call('artifact_restore', { id: v1.id, baseVersion: 2, versio…
+     99|     expect(records.get(key)).toMatchObject({ ownerNamespace: 'original…
+       |                              ^
+    100|     expect([...records.keys()]).toEqual([key]);
+    101|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > generic artifact design lifecycle with the 892 transport mock > forwards bound ownership and backend session through the generic resolved skill
+AssertionError: expected { …(3) } to match object { …(4) }
+
+- Expected
++ Received
+
+  {
+-   "ARTIFACT_OWNER_WORKFLOW_TYPE": "original-owner",
+    "PROJECT_API_TOKEN": "mock-token",
+    "WORKFLOW_TYPE": "arbitrary-agent",
+    "ZIBBY_ACCOUNT_API_URL": "https://api.mock.invalid",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:105:26
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy html without making requests
+AssertionError: expected { Object (error) } to match object { status: 400, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "artifact write failed (400): {\"error\":{\"code\":\"INVALID_STRUCTURE\",\"message\":\"Invalid design structure; see details\",\"details\":{\"id\":\"error-1\",\"sizeBytes\":327,\"sha256\":\"10efd3bca1764b5fcd2e1ee17b7c0d1f3d130b930a14a07e5af02c53ad561a36\",\"url\":\"https://objects.mock.invalid/download/object-2\",\"method\":\"GET\",\"headers\":{\"x-object-toke",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:112:17
+    110|   it.each(['html', 'markdown', 'text', 'data', 'share', 'contentType',…
+    111|     const out = await create({ [field]: field === 'data' ? {} : field …
+    112|     expect(out).toMatchObject({ status: 400, code: 'INVALID_STRUCTURE'…
+       |                 ^
+    113|     expect(requests).toHaveLength(0);
+    114|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy markdown without making requests
+AssertionError: expected { Object (error) } to match object { status: 400, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "artifact write failed (400): {\"error\":{\"code\":\"INVALID_STRUCTURE\",\"message\":\"Invalid design structure; see details\",\"details\":{\"id\":\"error-1\",\"sizeBytes\":331,\"sha256\":\"4812c264c416128e271fd0b1f782157d6eb2b006cf0a011b6aebe9a4352143ac\",\"url\":\"https://objects.mock.invalid/download/object-2\",\"method\":\"GET\",\"headers\":{\"x-object-toke",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:112:17
+    110|   it.each(['html', 'markdown', 'text', 'data', 'share', 'contentType',…
+    111|     const out = await create({ [field]: field === 'data' ? {} : field …
+    112|     expect(out).toMatchObject({ status: 400, code: 'INVALID_STRUCTURE'…
+       |                 ^
+    113|     expect(requests).toHaveLength(0);
+    114|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy text without making requests
+AssertionError: expected { Object (error) } to match object { status: 400, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "contentType is required with text — text/plain for code/logs, application/json for JSON data, text/csv for CSV",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:112:17
+    110|   it.each(['html', 'markdown', 'text', 'data', 'share', 'contentType',…
+    111|     const out = await create({ [field]: field === 'data' ? {} : field …
+    112|     expect(out).toMatchObject({ status: 400, code: 'INVALID_STRUCTURE'…
+       |                 ^
+    113|     expect(requests).toHaveLength(0);
+    114|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy data without making requests
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy share without making requests
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy contentType without making requests
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects mixed legacy uploadId without making requests
+AssertionError: expected { Object (error) } to match object { status: 400, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_STRUCTURE",
+-   "status": 400,
++   "error": "provide exactly one of markdown (preferred) or html or text (non-empty string)",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:112:17
+    110|   it.each(['html', 'markdown', 'text', 'data', 'share', 'contentType',…
+    111|     const out = await create({ [field]: field === 'data' ? {} : field …
+    112|     expect(out).toMatchObject({ status: 400, code: 'INVALID_STRUCTURE'…
+       |                 ^
+    113|     expect(requests).toHaveLength(0);
+    114|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > rejects full snapshot plus operations and missing discriminator, baseVersion or projectId
+AssertionError: expected undefined to be 400 // Object.is equality
+
+- Expected:
+400
+
++ Received:
+undefined
+
+ ❯ src/__tests__/artifact-design.test.ts:116:70
+    114|   });
+    115|   it('rejects full snapshot plus operations and missing discriminator,…
+    116|     expect((await create({ operations: singleBoardUpdate })).status).t…
+       |                                                                      ^
+    117|     expect((await create({ artifactType: undefined })).status).toBe(40…
+    118|     expect((await create({ projectId: undefined })).status).toBe(400);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > returns server defects per board without applying document preflight or consuming the legacy retry budget
+AssertionError: expected { Object (error) } to match object { status: 422, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_CONTENT",
+-   "defects": [
+-     {
+-       "artboardId": "board-2",
+-       "code": "html-defect",
+-       "path": [
+-         "html",
+-       ],
+-     },
+-   ],
+-   "status": 422,
++   "error": "provide exactly one of markdown (preferred) or html or text (non-empty string)",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:127:19
+    125|     for (let i = 0; i < 3; i++) {
+    126|       const out = await create({ design: snapshot });
+    127|       expect(out).toMatchObject({ status: 422, code: 'INVALID_CONTENT'…
+       |                   ^
+    128|     }
+    129|     expect((await create()).committed).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > returns stale base/current version conflict and does not replay or overwrite the index
+AssertionError: expected { error: 'id is required' } to match object { status: 409, …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "baseVersion": 1,
+-   "code": "VERSION_CONFLICT",
+-   "currentVersion": 2,
+-   "status": 409,
++   "error": "id is required",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:137:22
+    135|     const count = receipts.length;
+    136|     const conflict = await call('artifact_update', { id: v1.id, artifa…
+    137|     expect(conflict).toMatchObject({ status: 409, code: 'VERSION_CONFL…
+       |                      ^
+    138|     expect(conflict.instruction).toContain('Read the current'); expect…
+    139|     expect(records.get(`original-owner:artifact:${v1.id}`).currentVers…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > uses raw transfers for a near-5MiB escaped snapshot and returns total-byte limit facts for overflow
+AssertionError: expected undefined to be true // Object.is equality
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ src/__tests__/artifact-design.test.ts:143:26
+    141|   it('uses raw transfers for a near-5MiB escaped snapshot and returns …
+    142|     const v1 = await create({ design: makeHighEscapeSnapshot(MAX_SNAPS…
+    143|     expect(v1.committed).toBe(true);
+       |                          ^
+    144|     expect(mock.transfers.find(x => x.direction === 'upload').sizeByte…
+    145|     const bad = await create({ design: makeHighEscapeSnapshot(MAX_SNAP…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'create' retains receipt/index when download 1 fails; fixed GET recovers without replay
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'create' retains receipt/index when download 2 fails; fixed GET recovers without replay
+AssertionError: expected { Object (error) } to match object { committed: true, readBack: { …(1) } }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "committed": true,
+-   "readBack": {
+-     "status": "unverified",
+-   },
++   "error": "provide exactly one of markdown (preferred) or html or text (non-empty string)",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:157:17
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'replace' retains receipt/index when download 1 fails; fixed GET recovers without replay
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'replace' retains receipt/index when download 2 fails; fixed GET recovers without replay
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'patch' retains receipt/index when download 1 fails; fixed GET recovers without replay
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'patch' retains receipt/index when download 2 fails; fixed GET recovers without replay
+AssertionError: expected { error: 'id is required' } to match object { committed: true, readBack: { …(1) } }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "committed": true,
+-   "readBack": {
+-     "status": "unverified",
+-   },
++   "error": "id is required",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:157:17
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'restore' retains receipt/index when download 1 fails; fixed GET recovers without replay
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > 'restore' retains receipt/index when download 2 fails; fixed GET recovers without replay
+AssertionError: expected { Object (error) } to match object { committed: true, readBack: { …(1) } }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "committed": true,
+-   "readBack": {
+-     "status": "unverified",
+-   },
++   "error": "Unknown tool: artifact_restore",
+  }
+
+ ❯ src/__tests__/artifact-design.test.ts:157:17
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > does not claim a commit or update the index when the publish receipt is malformed
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/__tests__/artifact-design.test.ts:177:22
+    175|     const out = await create();
+    176|     expect(out.committed).toBeUndefined(); expect(out.error).toBeTruth…
+    177|     expect(receipts).toHaveLength(1);
+       |                      ^
+    178|   });
+    179|   it('hydrates generic GET through the shared parser even for an incom…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > hydrates generic GET through the shared parser even for an incomplete design receipt
+AssertionError: expected undefined to be true // Object.is equality
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ src/__tests__/artifact-design.test.ts:181:26
+    179|   it('hydrates generic GET through the shared parser even for an incom…
+    180|     const v1 = await create();
+    181|     expect(v1.committed).toBe(true);
+       |                          ^
+    182|     fault = (req, res) => req.url.includes(`/artifacts/${v1.id}`) && r…
+    183|       ? Response.json({ details: { url: 'https://objects.mock.invalid/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > keeps confirmed commit during index recall outage and preserves the old record
+ FAIL  src/__tests__/artifact-design.test.ts > design errors and confirmed commit recovery > keeps confirmed commit during index store outage and preserves the old record
+SyntaxError: "undefined" is not valid JSON
+ ❯ clone src/__tests__/artifact-design.test.ts:9:25
+      7| import { handleSharedSkillRequest } from '../sharedMcpServer.js';
+      8|
+      9| const clone = x => JSON.parse(JSON.stringify(x));
+       |                         ^
+     10| const call = async (name, args) => JSON.parse(await artifactSkill.hand…
+     11| const create = (extra = {}) => call('artifact_publish', { artifactType…
+ ❯ src/__tests__/artifact-design.test.ts:189:92
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/28]⎯
+
+ FAIL  src/__tests__/artifact-design.test.ts > an unrelated agent declaring artifact discovers and calls the same design tools through generic MCP
+AssertionError: expected [ 'artifact_publish', …(4) ] to deeply equal ArrayContaining{…}
+
+- Expected
++ Received
+
+- ArrayContaining [
++ [
+    "artifact_publish",
+-   "artifact_get",
+    "artifact_update",
+-   "artifact_versions",
+-   "artifact_restore",
++   "artifact_get",
++   "artifact_share",
++   "artifact_unshare",
+  ]
+
+ ❯ src/__tests__/artifact-design.test.ts:224:35
+    222|   };
+    223|   const listed = (await serve('tools/list')).result.tools;
+    224|   expect(listed.map(t => t.name)).toEqual(expect.arrayContaining(['art…
+       |                                   ^
+    225|   expect(listed.find(t => t.name === 'artifact_update').inputSchema.pr…
+    226|   const invoked = await serve('tools/call', { name: 'artifact_publish'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/28]⎯

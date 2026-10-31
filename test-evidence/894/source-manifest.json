@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "715607b7b723dbd0b464be045d361f5cca171f7e",
+  "algorithm": "sha256",
+  "files": {
+    "package.json": "060249dcf4690ab1699046816c262ca5be80f8e8d4c1b04f8d4cdb8f35fe3590",
+    "scripts/setup-artifact-tests.mjs": "257d318ce1e953aef4784453528cef4516f9ee11387f37fe64570702b919df6e",
+    "src/artifact.ts": "902c833ed25ffcb93940acd921018d7440bc1dd3072efad932b96342273dd075",
+    "src/artifactDesign.ts": "341b2e33dcf6728709adfea1e4c629e23832464ce88e9b4f00ae0ddc1cf559d0",
+    "src/__tests__/artifact-design.test.ts": "0316045d99bda491a3a4b951dfd52ae088430afc1af75e5ca91514085f5f1c09",
+    "src/__tests__/artifact.test.ts": "1d16fc2b629a4a256cd93f185bd33edcd3abce674c53e6603c1d6185a4ce9f5e"
+  }
+}

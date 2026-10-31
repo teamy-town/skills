@@ -1,0 +1,12 @@
+file:///Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/packages-tree/scripts/pack-tree.mjs:156
+    if (!rel) throw new Error(`${from} depends on ${name}, which is not in this tree — there is nowhere to build it from`);
+                    ^
+
+Error: @zibby/skills depends on @zibby/mem0ai, which is not in this tree — there is nowhere to build it from
+    at closure (file:///Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/packages-tree/scripts/pack-tree.mjs:156:21)
+    at file:///Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/check894-feed.mjs:10:18
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.4

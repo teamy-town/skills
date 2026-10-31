@@ -1,0 +1,12 @@
+{
+  "dependencyEdge": "@zibby/skills -> @zibby/artifact-contracts",
+  "contract": {
+    "name": "@zibby/artifact-contracts",
+    "version": "2.0.29",
+    "directory": "artifact-contracts"
+  },
+  "packages": [
+    "@zibby/artifact-contracts"
+  ],
+  "scope": "New dependency edge only; full skills feed needs the pre-existing mem0 sibling repository."
+}

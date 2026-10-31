@@ -1,0 +1,22 @@
+import path from 'node:path';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+
+const [packagesArg, repoArg, workflowArg, mode] = process.argv.slice(2);
+if (!packagesArg || !repoArg || !workflowArg) throw new Error('Usage: node test-evidence/894/check-feed.mjs <packages-tree> <skills> <agent-workflow> [--full]');
+const tree = path.resolve(packagesArg);
+const repo = path.resolve(repoArg);
+const workflow = path.resolve(workflowArg);
+const { discoverPackages, closure, zibbyDeps } = await import(pathToFileURL(path.join(tree, 'scripts/pack-tree.mjs')).href);
+const packages = discoverPackages(tree);
+packages.set('@zibby/skills', path.relative(tree, repo));
+packages.set('@zibby/agent-workflow', path.relative(tree, workflow));
+const skills = JSON.parse(fs.readFileSync(path.join(repo, 'package.json')));
+assert.ok(zibbyDeps(skills).includes('@zibby/artifact-contracts'));
+const resolved = closure([mode === '--full' ? '@zibby/skills' : '@zibby/artifact-contracts'], packages, tree);
+const contractPath = resolved.get('@zibby/artifact-contracts');
+assert.ok(contractPath, 'skills dependency must enter the existing package feed closure');
+const contract = JSON.parse(fs.readFileSync(path.join(tree, contractPath, 'package.json')));
+assert.equal(skills.dependencies[contract.name], contract.version);
+console.log(JSON.stringify({ dependencyEdge: '@zibby/skills -> @zibby/artifact-contracts', contract: { name: contract.name, version: contract.version, directory: contractPath }, packages: [...resolved.keys()], scope: mode === '--full' ? 'Full skills feed closure' : 'New dependency edge only; full skills feed needs the pre-existing mem0 sibling repository.' }, null, 2));

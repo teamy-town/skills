@@ -1,0 +1,120 @@
+[
+  {
+    "label": "release-focused",
+    "commit": "715607b7b723dbd0b464be045d361f5cca171f7e",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-design.test.ts",
+      "src/__tests__/artifact.test.ts",
+      "src/__tests__/artifact-preflight.test.ts",
+      "src/__tests__/artifact-description.test.ts",
+      "src/__tests__/backend-session-env-contract.test.ts",
+      "src/__tests__/sharedMcpServer.test.ts",
+      "src/__tests__/sharedSkillModules.test.ts",
+      "src/__tests__/skills-http-doors-bounded.test.ts"
+    ],
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+    "exitCode": 0,
+    "seconds": 2.602
+  },
+  {
+    "label": "release-before-design",
+    "commit": "570fde57d7d54c2820628bf73ecf02f307ddee8c",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "src/__tests__/artifact-design.test.ts"
+    ],
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/skills-894-before",
+    "exitCode": 1,
+    "seconds": 1.815
+  },
+  {
+    "label": "release-types",
+    "commit": "715607b7b723dbd0b464be045d361f5cca171f7e",
+    "command": [
+      "npm",
+      "run",
+      "build:types"
+    ],
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+    "exitCode": 2,
+    "seconds": 3.868
+  },
+  {
+    "label": "before-types",
+    "commit": "570fde57d7d54c2820628bf73ecf02f307ddee8c",
+    "command": [
+      "npm",
+      "run",
+      "build:types"
+    ],
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/skills-894-before",
+    "exitCode": 2,
+    "seconds": 3.252
+  },
+  {
+    "label": "candidate-lint",
+    "commit": "53a089f7c21d8e4481d7d17d915c3d9a8f68d5bd",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+    "exitCode": 1,
+    "seconds": 2.141
+  },
+  {
+    "label": "before-lint",
+    "commit": "570fde57d7d54c2820628bf73ecf02f307ddee8c",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "cwd": "/Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/skills-894-before",
+    "exitCode": 1,
+    "seconds": 1.528
+  },
+  {
+    "label": "final-build-js",
+    "commit": "6b4aaefc7caca4d4b9553f7989168b0e629b42b6",
+    "command": [
+      "node",
+      "/Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/packages-tree/scripts/build.mjs"
+    ],
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+    "exitCode": 0,
+    "seconds": 0.237
+  },
+  {
+    "label": "final-feed-edge",
+    "commit": "6b4aaefc7caca4d4b9553f7989168b0e629b42b6",
+    "command": [
+      "node",
+      "/Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/check894-feed.mjs",
+      "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+      "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/366f04a9-47f6-4ff6-a40b-17d322bce20a"
+    ],
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+    "exitCode": 0,
+    "seconds": 0.065
+  },
+  {
+    "label": "final-feed",
+    "commit": "6b4aaefc7caca4d4b9553f7989168b0e629b42b6",
+    "command": [
+      "node",
+      "/Users/jcui/.zibby/mac-runtime/retained/f5a0869adf67ce1c317215058139a3e57ba9081283bff39f123d7e5b8150106d/work/check894-feed.mjs",
+      "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+      "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/366f04a9-47f6-4ff6-a40b-17d322bce20a"
+    ],
+    "cwd": "/Users/jcui/.zibby/work/selfhosted-project/f466b3f7-47ab-45ba-99c1-5a8c25d85c3b/e9ac9070-53d7-40ae-b15c-2e01daec697d",
+    "exitCode": 1,
+    "seconds": 0.087
+  }
+]
