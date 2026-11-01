@@ -6,8 +6,8 @@ header; the server proxies to the Figma REST API as that user. No OAuth, no
 token store, no secrets. Built for **background / cloud agents** that can't do
 interactive OAuth.
 
-> Packaging + publishing notes for the Zibby self-host sidecar live in
-> [`SIDECAR.md`](./SIDECAR.md). Deployed on a Zibby box, you don't run any of
+> Packaging + publishing notes for the Teamy self-host sidecar live in
+> [`SIDECAR.md`](./SIDECAR.md). Deployed on a Teamy box, you don't run any of
 > the commands below — you deploy the **Figma MCP Service** agent from the
 > marketplace and open its Connect link.
 
@@ -81,6 +81,6 @@ npm install && node --env-file=.env src/server.js
 | `MCP_NAME`       | name the install command registers under       |
 | `FIGMA_API_ROOT` | (advanced) Figma REST root                     |
 
-As a Zibby sidecar none of these are set by hand: the control-plane derives
+As a Teamy sidecar none of these are set by hand: the control-plane derives
 `PUBLIC_BASE_URL`/`PUBLIC_BASE_PATH` from the box's advertised origin and the
 sidecar's resolved public mount.

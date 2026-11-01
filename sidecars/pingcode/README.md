@@ -27,7 +27,7 @@ MCP server with a header can use it:
      --header "Authorization: Bearer mcp_…"
    ```
 
-2. **A hosted agent platform (e.g. a Zibby agent)** — attach the SAME URL +
+2. **A hosted agent platform (e.g. a Teamy agent)** — attach the SAME URL +
    token via the platform's custom-MCP feature (paste
    `<PUBLIC_BASE_URL>/mcp` and the `Authorization: Bearer mcp_…` header into
    its add-MCP flow). The agent then calls PingCode as the human who did the
@@ -114,7 +114,7 @@ That's it. **No token issuance, no user list, no manual provisioning.**
    FIRST — see gotchas), consent.
 2. The success page shows a per-agent install block containing a fresh
    personal `mcp_…` token. Copy the one for your agent, paste it to the
-   agent, done. (A Zibby-style hosted agent instead takes the URL + header
+   agent, done. (A Teamy-style hosted agent instead takes the URL + header
    through its custom-MCP add flow.)
 
 ## Token lifetimes
