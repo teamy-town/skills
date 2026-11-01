@@ -205,7 +205,7 @@ function onDemandStore(row) {
   return { owner: m[1], name: m[2], storeId: row.storeId };
 }
 
-async function findStore(store, { read = false } = {}) {
+async function findStore(store, { read = false } = {}): Promise<{ storeId?: any; name?: string; owner?: string; error?: string }> {
   const bound = resolveStore(store);
   if (!bound.error) return bound;
   const requested = typeof store === 'string' ? store.trim() : '';
