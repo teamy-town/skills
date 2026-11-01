@@ -129,7 +129,7 @@ export const reportObjectSchema = z.object({
     }),
   footer: z.object({
     viewUrl: z.string().url().optional()
-      .describe('Optional "View in Zibby" button URL.'),
+      .describe('Optional "View in Teamy" button URL.'),
     rerunUrl: z.string().url().optional()
       .describe('Optional "Run again" button URL.'),
   }).optional(),
@@ -328,7 +328,7 @@ export function reportToBlockKit(report) {
     if (parsed.footer.viewUrl) {
       actions.push({
         type: 'button',
-        text: { type: 'plain_text', text: 'View in Zibby' },
+        text: { type: 'plain_text', text: 'View in Teamy' },
         url: parsed.footer.viewUrl,
         style: 'primary',
       });
@@ -452,7 +452,7 @@ export function reportToLarkCard(report) {
     if (parsed.footer.viewUrl) {
       actions.push({
         tag: 'button',
-        text: { tag: 'plain_text', content: 'View in Zibby' },
+        text: { tag: 'plain_text', content: 'View in Teamy' },
         url: parsed.footer.viewUrl,
         type: 'primary',
       });
@@ -929,7 +929,7 @@ export function reportToMarkdown(report) {
   // Footer links
   if (parsed.footer && (parsed.footer.viewUrl || parsed.footer.rerunUrl)) {
     const links = [];
-    if (parsed.footer.viewUrl) links.push(`[View in Zibby](${parsed.footer.viewUrl})`);
+    if (parsed.footer.viewUrl) links.push(`[View in Teamy](${parsed.footer.viewUrl})`);
     if (parsed.footer.rerunUrl) links.push(`[Run again](${parsed.footer.rerunUrl})`);
     out.push('', '---', '', links.join(' · '));
   }

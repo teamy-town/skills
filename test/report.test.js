@@ -821,13 +821,13 @@ describe('reportToMarkdown', () => {
     const md = reportToMarkdown(baseReport({
       footer: { viewUrl: 'https://zibby.dev/x', rerunUrl: 'https://zibby.dev/x/rerun' },
     }));
-    expect(md).toContain('[View in Zibby](https://zibby.dev/x)');
+    expect(md).toContain('[View in Teamy](https://zibby.dev/x)');
     expect(md).toContain('[Run again](https://zibby.dev/x/rerun)');
   });
 
   it('omits the footer block entirely when absent', () => {
     const md = reportToMarkdown(baseReport());
-    expect(md).not.toContain('View in Zibby');
+    expect(md).not.toContain('View in Teamy');
     expect(md).not.toContain('---');
   });
 
@@ -847,7 +847,7 @@ describe('reportToMarkdown', () => {
     expect(md).toContain('| x |');
     expect(md).toContain('- 🔵 note 1');
     expect(md).toContain('- **k**: v');
-    expect(md).toContain('[View in Zibby](https://a.com)');
+    expect(md).toContain('[View in Teamy](https://a.com)');
   });
 
   it('throws on invalid input (schema parse error surfaces)', () => {
