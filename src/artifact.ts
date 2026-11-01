@@ -1217,7 +1217,7 @@ Tools:
           favicon: { type: 'string', description: 'Optional emoji used as the browser-tab icon, e.g. "📊".' },
           summary: { type: 'string', description: 'Optional one-line summary for your own index (defaults to the title). Helps you recall later what this page was.' },
           description: { type: 'string', description: `Optional. ${ARTIFACT_DESCRIPTION_RULE} This is the artifact's caption, NOT its content: the page/file itself is the content, and a reader who opens it should be able to understand what they are looking at without asking you. Write it as a short report with headings, bullets and tables (same Markdown subset as the \`markdown\` field, 16 KB max).` },
-          share: { type: 'boolean', description: 'Set true to publish the page WITH a password link in one step — the response then also carries { shareUrl, password }, which you send together. Use it whenever the people who asked are in a chat channel and have no Zibby account. Omit it (the default) for anything internal: the page is then readable only by logged-in members of this project, and no password exists.' },
+          share: { type: 'boolean', description: 'Set true to publish the page WITH a password link in one step — the response then also carries { shareUrl, password }, which you send together. Use it whenever the people who asked are in a chat channel and have no Teamy account. Omit it (the default) for anything internal: the page is then readable only by logged-in members of this project, and no password exists.' },
         },
         required: ['title'],
       },
@@ -1277,7 +1277,7 @@ Tools:
       name: 'artifact_share',
       description:
         'Make an artifact viewable WITHOUT a Zibby login, by password. Returns { url, password } — a link anyone can open plus the password that opens it. '
-        + 'USE THIS when the people who need to read the page do not have Zibby accounts — the usual case is a Lark or Slack channel where you were asked for something and the channel members are not Zibby users. '
+        + 'USE THIS when the people who need to read the page do not have Teamy accounts — the usual case is a Lark or Slack channel where you were asked for something and the channel members are not Teamy users. '
         + 'The normal artifact url only opens for logged-in members of this project, so for those recipients it is a dead link; this is what makes it readable. '
         + 'You MUST then send BOTH the url and the password in your reply, and copy the password EXACTLY (it is case-sensitive). It is shown ONCE and cannot be looked up afterwards — if it is lost, call this again to issue a new one, which also stops the old one working. '
         + 'Format the two so both are easy to copy; do not paraphrase the password, do not "tidy" it, and do not split it across lines. '

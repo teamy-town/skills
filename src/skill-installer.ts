@@ -240,7 +240,7 @@ export const skillInstallerSkill: any = {
           const opened = openBrowser(integrationUrl);
           return JSON.stringify({
             ok: false,
-            error: `${meta.integrationProvider} is not connected for this Zibby account yet`,
+            error: `${meta.integrationProvider} is not connected for this Teamy account yet`,
             needsIntegration: true,
             integrationUrl,
             openedBrowser: opened,

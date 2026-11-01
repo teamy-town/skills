@@ -109,7 +109,7 @@ export const triggerAgentSkill: any = {
     'Trigger another Zibby workflow/agent run in this project (agent-driven, fire-and-forget; cloud + self-hosted).',
 
   promptFragment: `## Trigger another agent (agent-driven)
-You can start another Zibby agent run yourself with the \`trigger_agent\`
+You can start another Teamy agent run yourself with the \`trigger_agent\`
 tool — and YOU decide when and how many times to call it. Each call starts ONE
 independent run (fire-and-forget) and returns its executionId; it does NOT wait for
 that run to finish.
