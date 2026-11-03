@@ -226,3 +226,26 @@ it('an unrelated agent declaring artifact discovers and calls the same design to
   const invoked = await serve('tools/call', { name: 'artifact_publish', arguments: { title: '通用能力', artifactType: 'design', projectId: 'mock-project', design: clone(threeArtboards) } });
   expect(JSON.parse(invoked.result.content[0].text)).toMatchObject({ committed: true, readBack: { status: 'verified' } });
 });
+
+// 2026-11-03 (run 9d6b8743): a run is never told its project id, so the designer guessed and passed its execution id
+// three times before finding the project. Inside a run the design write defaults to the run's own project.
+describe('design publish/update: the run\'s own project is the default', () => {
+  const projectOf = () => requests.filter(r => r.method !== 'GET' && r.body && r.body.projectId !== undefined).map(r => r.body.projectId);
+  it('no projectId passed → the run\'s PROJECT_ID is used', async () => {
+    vi.stubEnv('PROJECT_ID', 'mock-project');
+    const out = await call('artifact_publish', { artifactType: 'design', title: '三板设计', design: clone(threeArtboards) });
+    expect(out.error).toBeUndefined();
+    expect(projectOf()).toContain('mock-project');
+  });
+  it('an explicit projectId still wins', async () => {
+    vi.stubEnv('PROJECT_ID', 'other-project');
+    const out = await create();
+    expect(out.error).toBeUndefined();
+    expect(projectOf()).not.toContain('other-project');
+  });
+  it('no projectId and no run project → refused, saying why', async () => {
+    vi.stubEnv('PROJECT_ID', '');
+    const out = await call('artifact_publish', { artifactType: 'design', title: '三板设计', design: clone(threeArtboards) });
+    expect(out.error).toMatch(/projectId is required/);
+  });
+});

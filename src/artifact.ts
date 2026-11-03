@@ -953,7 +953,7 @@ Tools:
       if (isCommentCall(name)) return JSON.stringify(await handleCommentTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken() }));
       if (isDesignCall(name, args)) {
         try {
-          return JSON.stringify(await handleDesignTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken(), indexRecall, indexStore, ownerNamespace: artifactOwnerNamespace() }));
+          return JSON.stringify(await handleDesignTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken(), indexRecall, indexStore, ownerNamespace: artifactOwnerNamespace(), runProjectId: process.env.PROJECT_ID }));
         } catch (error) { return JSON.stringify(designError(error)); }
       }
       switch (name) {

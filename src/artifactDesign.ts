@@ -5,7 +5,7 @@ import { fetchWithDeadline } from './lib/http-deadline.js';
 
 export const designProperties = {
   artifactType: { type: 'string', enum: ['design'], description: 'Explicitly selects versioned design transport; ordinary JSON text remains a file.' },
-  projectId: { type: 'string', description: 'Owning project id, required when creating or updating a design. The server checks access using the backend session.' },
+  projectId: { type: 'string', description: 'Owning project id. Inside a run it defaults to the run\'s own project; pass it only to write to another project. The server checks access using the backend session.' },
   design: { type: 'object', description: `Shared DesignSnapshotSchema: {artifactType:"design",schemaVersion:${SCHEMA_VERSION},artboards:[{id,name,width,height,x,y,html}]}. Full editable source, at most ${MAX_SNAPSHOT_BYTES} UTF-8 JSON bytes in total. Only initial publish fills missing board IDs; retain returned IDs on updates.` },
   operations: { type: 'array', items: { type: 'object' }, description: 'Shared OperationsSchema: add {op:"add",artboard:{id,name,width,height,x,y,html}}, remove {op:"remove",artboardId}, update {op:"update",artboardId,changes:{name?,width?,height?,html?}}, move {op:"move",artboardId,x,y}. Mutually exclusive with design. IDs stay stable.' },
   baseVersion: { type: 'integer', minimum: 1, description: 'Required for design update/restore. Use the version you read; a conflict requires reading current state and deciding again.' },
@@ -58,7 +58,10 @@ export function designError(error) {
   return out;
 }
 
-export async function handleDesignTool(name, args, { baseUrl, token, indexRecall, indexStore, ownerNamespace }) {
+export async function handleDesignTool(name, args, { baseUrl, token, indexRecall, indexStore, ownerNamespace, runProjectId = undefined }) {
+  // A run is never told its project id; without this default the model guessed (2026-11-03, run 9d6b8743 passed its
+  // execution id three times). The run's own project is the default; an explicit projectId still wins.
+  if (['artifact_publish', 'artifact_update'].includes(name) && args && (typeof args.projectId !== 'string' || !args.projectId.trim()) && runProjectId) args = { ...args, projectId: runProjectId };
   const invalid = (error) => ({ error, code: 'INVALID_STRUCTURE', status: 400 });
   const legacyContent = ['html', 'markdown', 'text', 'data', 'contentType', 'share', 'kind', 'favicon', 'description', 'uploadId'];
   if (name === 'artifact_restore' && [...legacyContent, 'design', 'operations'].some(k => args?.[k] !== undefined)) return invalid('Restore selects an existing version; do not combine it with new content.');
@@ -69,7 +72,7 @@ export async function handleDesignTool(name, args, { baseUrl, token, indexRecall
     }
     if ((args.design !== undefined) === (args.operations !== undefined)) return invalid('Pass exactly one of design or operations.');
     if (name === 'artifact_publish' && (args.operations !== undefined || args.baseVersion !== undefined || args.id !== undefined)) return invalid('Initial publish requires a full design and omits id/baseVersion/operations.');
-    if (typeof args.projectId !== 'string' || !args.projectId.trim()) return invalid('projectId is required for design publish/update.');
+    if (typeof args.projectId !== 'string' || !args.projectId.trim()) return invalid('projectId is required for design publish/update (this call does not know its run\'s project).');
     if (name === 'artifact_update' && !Number.isSafeInteger(args.baseVersion)) return invalid('baseVersion is required for a design update.');
     if (name === 'artifact_publish' && (typeof args.title !== 'string' || !args.title.trim())) return invalid('title is required.');
   }
