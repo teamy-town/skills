@@ -1059,3 +1059,83 @@ describe('the button words are the card author\'s', () => {
     delete process.env.WORKFLOW_UUID;
   });
 });
+
+// run_log/magnum/2026-11-03-member-mail-never-read: a developer's note to the
+// tech-lead AGENT about ticket 910 (no executionId) sat unread for hours — every
+// later tech-lead run, one of them working 910 itself, skipped it as "the tick
+// reader's", and the tech lead has no tick reader. A note addressed to the agent
+// is now taken by an assignment of its ticket, and by the agent's own mail round.
+describe('mail addressed to the AGENT reaches a run that reads it', () => {
+  const PREFIX = 'project-manager:doorbell:';
+  const note = (id: string, m: Record<string, any>) => ({
+    scope: `${PREFIX}${id}`,
+    content: JSON.stringify({ id, at: '2026-11-03T07:14:22.370Z', from: { kind: 'member', name: 'developer', workflowType: 'developer', executionId: 'dev-run' }, about: {}, text: 'x', needsAck: true, ...m }),
+  });
+  const ROWS = [
+    note('to-910', { about: { ticketKey: '910' }, text: 'about 910' }),
+    note('to-911', { about: { ticketKey: '911' }, text: 'about 911' }),
+    note('no-ticket', { text: 'about nothing in particular' }),
+    note('other-run', { about: { executionId: 'someone-else', ticketKey: '910' }, text: 'for another run' }),
+    note('later', { notBefore: new Date(Date.now() + 600000).toISOString(), text: 'not yet' }),
+  ];
+  const isActive = (url: string) => url.endsWith('/projects/proj-1/runs/active');
+  const door = (self: any) => mockDoor([
+    [isAck, () => ackOk()],
+    [isActive, () => ({ json: { runs: [self, { executionId: 'x', workflowType: 'developer', ticketKey: '911', status: 'running' }] } })],
+    [(url) => url.endsWith('/credits/review-memory'), () => ({ json: { truncated: false, memories: ROWS } })],
+  ]);
+  afterEach(() => { delete process.env.RUN_STARTED_VIA; });
+
+  it('an assignment of ticket 910 takes the note to its agent about 910 — and only that one', async () => {
+    process.env.RUN_STARTED_VIA = 'dispatch';
+    door({ executionId: SELF, workflowType: 'project-manager', ticketKey: '910', parentExecutionId: 'mgr', status: 'running' });
+    const out = await call('check_messages');
+    expect(out.messages.map((m: any) => m.id)).toEqual(['to-910']);
+    expect(out.messages[0]).toMatchObject({ ticketKey: '910', text: 'about 910', from: { workflowType: 'developer', executionId: 'dev-run' } });
+    expect(ackedIds()).toEqual(['to-910']);
+    expect(out.left).toBe(4);
+    // One read of the platform's own row for this run, however many notes name a ticket.
+    expect(seen.filter((x) => isActive(x.url))).toHaveLength(1);
+  });
+
+  it('a round nobody assigned (a manager\'s tick, a doorbell wake) leaves mail to the agent for its mail reader, and reads no run list', async () => {
+    for (const via of ['doorbell', 'schedule', undefined]) {
+      seen = [];
+      if (via) process.env.RUN_STARTED_VIA = via; else delete process.env.RUN_STARTED_VIA;
+      door({ executionId: SELF, workflowType: 'project-manager', ticketKey: '910', status: 'running' });
+      const out = await call('check_messages');
+      expect(out.messages).toEqual([]);
+      expect(ackedIds()).toEqual([]);
+      expect(seen.filter((x) => isActive(x.url))).toHaveLength(0);
+    }
+  });
+
+  it('an assignment whose own row cannot be read leaves the mail where it is', async () => {
+    process.env.RUN_STARTED_VIA = 'dispatch';
+    mockDoor([
+      [isAck, () => ackOk()],
+      [isActive, () => ({ ok: false, status: 503, json: { error: 'busy' } })],
+      [(url) => url.endsWith('/credits/review-memory'), () => ({ json: { truncated: false, memories: ROWS } })],
+    ]);
+    const out = await call('check_messages');
+    expect(out.messages).toEqual([]);
+    expect(out.left).toBe(5);
+  });
+
+  it('checkAgentMail — the template\'s mail round takes every due note to the agent, never another run\'s or a held one', async () => {
+    door({ executionId: SELF, workflowType: 'project-manager', status: 'running' });
+    const out = await agentMessagingSkill.checkAgentMail();
+    expect(out.messages.map((m: any) => m.id)).toEqual(['to-910', 'to-911', 'no-ticket']);
+    expect(ackedIds()).toEqual(['to-910', 'to-911', 'no-ticket']);
+    expect(out.left).toBe(2);
+  });
+
+  it('the model cannot ask for the mail round: agentMail is not a tool argument', async () => {
+    door({ executionId: SELF, workflowType: 'project-manager', status: 'running' });
+    const out = await call('check_messages', { agentMail: true });
+    expect(out.messages).toEqual([]);
+    expect(ackedIds()).toEqual([]);
+    const tool = agentMessagingSkill.tools.find((t: any) => t.name === 'check_messages');
+    expect(JSON.stringify(tool.inputSchema || tool.input_schema || {})).not.toContain('agentMail');
+  });
+});

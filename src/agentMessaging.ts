@@ -32,10 +32,20 @@
  *       (packages/workflow-templates/board-runner/lib/doorbell.js). This tool
  *       reads the same rows with the same read-then-ACKNOWLEDGE protocol (the
  *       platform MARKS a row `ackedAt`/`ackedBy` and keeps it as history —
- *       `POST …/inbox/{id}/ack`; nothing is deleted), but takes ONLY the notes
+ *       `POST …/inbox/{id}/ack`; nothing is deleted), and takes the notes
  *       addressed to THIS execution (`about.executionId === EXECUTION_ID`). A
- *       note with no executionId, or for another execution, is left exactly
- *       where it was — it belongs to the tick reader.
+ *       note for another execution is left exactly where it was. A note
+ *       addressed to the AGENT (no executionId) is taken in two cases, both
+ *       decided by recorded facts, never by the words:
+ *         - the caller says this round IS the agent's own mail round
+ *           (`agentMail: true` — passed by a template's declared mailbox node,
+ *           never by the model; it is not in the tool's schema);
+ *         - this run is an assignment (RUN_STARTED_VIA = 'dispatch') of the
+ *           ticket the note is about (the platform's own row for this run,
+ *           `ticketKey`) — the same rule the platform applies at send time
+ *           when that run is already up (backend agent-inbox workingRunFor).
+ *       Anything else addressed to the agent stays for its mail reader.
+ *       run_log/magnum/2026-11-03-member-mail-never-read
  *   list_messages       → GET  {api}/projects/{PROJECT_ID}/workflows/{WORKFLOW_TYPE}/inbox
  *       What this agent still OWES (pending = unacknowledged, the default) or
  *       its recent history (`unacked:false`). Own mailbox only — the platform
@@ -863,7 +873,27 @@ async function kvPost(token: string, op: string, body: Record<string, any>): Pro
   try { return { ok: true, data: await res.json() }; } catch (err: any) { return { ok: false, error: `unreadable body: ${err?.message || err}` }; }
 }
 
-async function checkMessages(args: { acknowledgeCompletions?: string[] } = {}) {
+/** The platform's name for a start a manager made (backend subgraph-internal `via: 'dispatch'`). */
+export const ASSIGNMENT_DOOR = 'dispatch';
+
+/**
+ * The tickets THIS run was given, from the platform's own row for it (the
+ * active list's `ticketKey`) — read only for an assignment, and only when a
+ * note addressed to the agent names a ticket. Unknown ⇒ none (the note stays).
+ */
+async function ownAssignedTickets(self: string): Promise<Set<string>> {
+  if (envStr('RUN_STARTED_VIA') !== ASSIGNMENT_DOOR) return new Set();
+  try {
+    const fetched = await fetchActiveRuns();
+    if ('error' in fetched) return new Set();
+    const row = fetched.runs.find((r) => r.executionId === self);
+    return new Set(row && typeof row.ticketKey === 'string' && row.ticketKey ? [row.ticketKey] : []);
+  } catch {
+    return new Set();
+  }
+}
+
+async function checkMessages(args: { acknowledgeCompletions?: string[]; agentMail?: boolean } = {}) {
   const token = getSessionToken();
   if (!token) return { error: 'No backend credential (PROJECT_API_TOKEN). Agent messaging is only available inside a Zibby run.' };
   const self = selfExecutionId();
@@ -875,6 +905,11 @@ async function checkMessages(args: { acknowledgeCompletions?: string[] } = {}) {
   const messages: any[] = [];
   const completions: any[] = [];
   const acknowledge = new Set(Array.isArray(args.acknowledgeCompletions) ? args.acknowledgeCompletions : []);
+  // THIS ROUND IS THE AGENT'S MAIL ROUND — said by the template's own code
+  // (its declared mailbox node), never by the model: the tool's schema does not
+  // carry it, and only the literal `true` counts.
+  const agentMail = args.agentMail === true;
+  let tickets: Set<string> | null = null;
   // THE PER-ID TRUTH ABOUT THE MARK, not the intention to make it. A tool that
   // reports "acknowledged" before the platform has taken the mark is how a
   // manager answered the same message seven rounds running (board-runner
@@ -931,10 +966,22 @@ async function checkMessages(args: { acknowledgeCompletions?: string[] } = {}) {
       // into the conversation as a plain message.
       if (typeof report?.replyTo === 'string' && report.replyTo) { left += 1; continue; }
       const note = parseInboxNote(row);
-      // Not ours: no executionId (the agent's tick reader owns it), another
-      // run's, or not an inbox message at all. Left untouched, counted.
-      // Not ours, or not yet due: left where it is, counted.
-      if (!note || !noteDue(note) || (note.executionId !== self && !(note.notBefore && !note.executionId && note.afterExecutionId !== self))) { left += 1; continue; }
+      // Not ours (another run's, or not an inbox message at all), or not yet
+      // due: left where it is, counted. A note addressed to the AGENT is ours
+      // when it is a reminder this run did not write, when this round is the
+      // agent's mail round, or when this assignment works its ticket.
+      if (!note || !noteDue(note)) { left += 1; continue; }
+      let ours = note.executionId === self;
+      if (!ours && !note.executionId) {
+        if (note.notBefore) ours = note.afterExecutionId !== self;
+        else if (agentMail) ours = true;
+        else if (typeof note.ticketKey === 'string' && note.ticketKey) {
+          // eslint-disable-next-line no-await-in-loop
+          if (!tickets) tickets = await ownAssignedTickets(self);
+          ours = tickets.has(note.ticketKey);
+        }
+      }
+      if (!ours) { left += 1; continue; }
       // Read-then-ACKNOWLEDGE per row: the platform marks it (ackedAt/ackedBy =
       // this run) and keeps it as history. An ack that fails leaves the note to
       // be re-read next time — we still return it, and the RESULT SAYS SO
@@ -1074,6 +1121,21 @@ refused; credentials belong on the agent's Env tab.`,
     };
   },
 
+  /**
+   * THE AGENT'S MAIL ROUND — check_messages that also takes every due note
+   * addressed to the agent itself. Called by a template's declared mailbox node
+   * (the node flagged `supervisionEntry: true`) on a round the doorbell started
+   * with no work handed — template code, never the model. Same read, same
+   * acknowledgement, same result shape as the tool. Never throws.
+   */
+  async checkAgentMail() {
+    try {
+      return await checkMessages({ agentMail: true });
+    } catch (e: any) {
+      return { messages: [], left: 0, error: e?.message || String(e) };
+    }
+  },
+
   async handleToolCall(name: string, args: any) {
     try {
       switch (name) {
@@ -1083,8 +1145,9 @@ refused; credentials belong on the agent's Env tab.`,
           return JSON.stringify(await readRunLogs(args));
         case 'message_agent':
           return JSON.stringify(await messageAgent(args));
+        // The model's door: `agentMail` is not a tool argument (checkAgentMail below is the template's).
         case 'check_messages':
-          return JSON.stringify(await checkMessages(args));
+          return JSON.stringify(await checkMessages({ acknowledgeCompletions: args?.acknowledgeCompletions }));
         case 'list_messages':
           return JSON.stringify(await listMessages(args));
         case 'needs_you':
@@ -1154,7 +1217,7 @@ refused; credentials belong on the agent's Env tab.`,
     },
     {
       name: 'check_messages',
-      description: 'Take the notes addressed to this run (from a manager, a person or another agent), with due delayed reminders for this agent; each is handed over once and marked acknowledged (kept as history). Reminders not yet due, and ones this run wrote, are left. A member\'s note carries from.workflowType (reply by it) and from.executionId (its run). Also returns child completions with their task context and declared results. Returns { messages, completions?, left, acknowledged?, ackFailed? }: acknowledged = ids the mailbox marked; ackFailed = still in your mailbox, with the platform\'s reason, and handed over again.',
+      description: 'Take the notes addressed to this run (from a manager, a person or another agent), notes to your agent about the ticket this run was given, and due delayed reminders for this agent; each is handed over once and marked acknowledged (kept as history). Reminders not yet due, and ones this run wrote, are left. A member\'s note carries from.workflowType (reply by it) and from.executionId (its run). Also returns child completions with their task context and declared results. Returns { messages, completions?, left, acknowledged?, ackFailed? }: acknowledged = ids the mailbox marked; ackFailed = still in your mailbox, with the platform\'s reason, and handed over again.',
       input_schema: { type: 'object', properties: { acknowledgeCompletions: { type: 'array', items: { type: 'string' }, description: 'Receipt ids of completions already reported to the requester. Reading alone does not acknowledge.' } }, required: [] },
     },
     {
