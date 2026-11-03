@@ -525,7 +525,7 @@ describe('contract pin: agent-inbox.js message shape', () => {
   it.skipIf(!present)('the platform declares exactly the fields this skill reads', () => {
     const src = readFileSync(backendFile, 'utf-8');
     // The header's one-line contract.
-    expect(src).toMatch(/\{\s*id,\s*at,\s*from:\s*\{kind:\s*'human'\|'member'\|'platform',\s*name,\s*workflowType\?,\s*executionId\?\s*\},?\s*\n?\s*\*?\s*about:\s*\{ticketKey\?,\s*executionId\?\},\s*text,\s*relayNote\?,\s*personWordsCheck\?,\s*answerTo\?,\s*needsAck,\s*notBefore\?,\s*ackedAt\?,\s*ackedBy\?,\s*replyTo\?\s*\}/);
+    expect(src).toMatch(/\{\s*id,\s*at,\s*from:\s*\{kind:\s*'human'\|'member'\|'platform',\s*name,\s*workflowType\?,\s*executionId\?\s*\},?\s*\n?\s*\*?\s*about:\s*\{ticketKey\?,\s*executionId\?\},\s*text,\s*relayNote\?,\s*personWordsCheck\?,\s*answerTo\?,\s*inAnswerTo\?,\s*exchangeRound\?,\s*chatBack\?,\s*needsAck,\s*notBefore\?,\s*ackedAt\?,\s*ackedBy\?,\s*replyTo\?\s*\}/);
     // Every key of the message, declared once — a field this skill reads that
     // the platform no longer writes is drift.
     const list = (name: string) => {
@@ -533,7 +533,7 @@ describe('contract pin: agent-inbox.js message shape', () => {
       expect(m, `${name} must be declared in agent-inbox.js`).toBeTruthy();
       return m![1].split(',').map((x) => x.trim().replace(/^'|'$/g, '')).filter(Boolean);
     };
-    expect(list('MESSAGE_FIELDS')).toEqual(['id', 'at', 'from', 'about', 'text', 'relayNote', 'personWordsCheck', 'answerTo', 'needsAck', 'notBefore', 'afterExecutionId', 'holdRings', 'ackedAt', 'ackedBy', 'replyTo']);
+    expect(list('MESSAGE_FIELDS')).toEqual(['id', 'at', 'from', 'about', 'text', 'attachments', 'relayNote', 'personWordsCheck', 'answerTo', 'inAnswerTo', 'exchangeRound', 'chatBack', 'needsAck', 'notBefore', 'afterExecutionId', 'holdRings', 'ackedAt', 'ackedBy', 'replyTo']);
     // A person's reply to a verification card is marked with this field, and the
     // drain below leaves such a row to the person_verification call waiting for it.
     expect(src).toMatch(/const REPLY_TO_FIELD = 'replyTo';/);
@@ -611,6 +611,16 @@ describe('contract pin: agent-inbox.js message shape', () => {
     expect(withIdentity).toMatchObject({ from: { kind: 'member', name: 'project-manager', workflowType: 'project-manager', executionId: 'run-pm-1' }, ackedAt: '2026-09-13T10:00:05.000Z', ackedBy: { kind: 'member', workflowType: 'developer' } });
     // A platform note (parent-bell child_done) is NOT an inbox message.
     expect(parsedNull({ why: 'child_done', worker: 'developer' })).toBeNull();
+  });
+
+  // run_log/magnum/2026-11-04-role-mail-waits-for-all-runs: two agents' own rounds answering each other.
+  it('a note that answers this agent\'s own note arrives with which notes it answers and how many answers in a row (agent-inbox.js exchangeFacts)', () => {
+    const note = { id: '000001757757600000-ab12', at: '2026-11-04T09:05:00.000Z', from: { kind: 'member', name: 'designer', workflowType: 'designer', executionId: 'run-designer-1' },
+      about: { ticketKey: '910' }, text: 'done, nothing else needed', inAnswerTo: ['000001757757500000-cd34'], exchangeRound: 3, needsAck: true };
+    expect(parseInboxNote({ scope: 'x', content: JSON.stringify(note) })).toMatchObject({ inAnswerTo: ['000001757757500000-cd34'], exchangeRound: 3 });
+    const plain = parseInboxNote({ scope: 'x', content: JSON.stringify({ ...note, inAnswerTo: [], exchangeRound: 0 }) });
+    expect(plain).not.toHaveProperty('inAnswerTo');
+    expect(plain).not.toHaveProperty('exchangeRound');
   });
 
   it('a person\'s answer to a card arrives with the card it answers (agent-inbox.js answerTo)', () => {

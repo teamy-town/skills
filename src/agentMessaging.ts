@@ -749,6 +749,10 @@ export function parseInboxNote(row: KvRow | null | undefined) {
     // platform from the card's own row, so it is handed on whole — without it
     // an answer is a bare "Yes" with nothing saying what was asked.
     ...(parsed.answerTo && typeof parsed.answerTo === 'object' && !Array.isArray(parsed.answerTo) ? { answerTo: parsed.answerTo } : {}),
+    // A BACK-AND-FORTH between two agents' own rounds (agent-inbox.js exchangeFacts): the ids of this
+    // agent's notes the sender took and answers here, and how many answers in a row the exchange has had.
+    ...(Array.isArray(parsed.inAnswerTo) && parsed.inAnswerTo.length ? { inAnswerTo: parsed.inAnswerTo.filter((x: any) => typeof x === 'string').slice(0, 5) } : {}),
+    ...(Number.isSafeInteger(parsed.exchangeRound) && parsed.exchangeRound > 0 ? { exchangeRound: parsed.exchangeRound } : {}),
   };
 }
 
