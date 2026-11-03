@@ -11,6 +11,43 @@ export const designProperties = {
   baseVersion: { type: 'integer', minimum: 1, description: 'Required for design update/restore. Use the version you read; a conflict requires reading current state and deciding again.' },
 };
 export const designVersionProperty = { type: 'integer', minimum: 1, description: 'Immutable design version; omit on get for latest. Required on restore: the old version to copy into a new revision.' };
+export const designInlineProperty = { type: 'boolean', description: 'Design get only: true returns the whole snapshot (every board\'s html) in this answer. By default inside a run the answer is the board index and the whole design arrives in this run as a JSON file; use inline when this run cannot read files.' };
+
+/**
+ * WHAT A DESIGN READ HANDS THE MODEL (run fbb8cbf2, 2026-11-03: two reads of a
+ * 27-board design returned ~615 KB each, 34% of the run's tool output, carried
+ * through every later request). Inside a run the answer is the board index —
+ * every board's id, name, size, position and html bytes — and the whole
+ * snapshot is brought into the run as a JSON file through the same mailbox door
+ * artifact_open uses; the model reads what it needs with its own tools. Nothing
+ * is withheld: `inline: true` returns the whole snapshot here, and a call with
+ * no run (nothing to bring a file into) or whose file could not be sent gets
+ * the whole snapshot as before.
+ */
+export async function designReadAnswer(read, { inline = false, bringIntoRun = undefined }: { inline?: boolean; bringIntoRun?: (file: { id: string; name: string; version?: number }, text: string) => Promise<unknown> } = {}) {
+  if (inline || typeof bringIntoRun !== 'function') return read;
+  const snapshot = read.revision.snapshot;
+  const version = read.revision.metadata.version;
+  const id = read.artifact.id;
+  const name = `design-${id}-v${version}.json`;
+  const artboards = snapshot.artboards.map(({ html, ...board }) => ({ ...board, htmlBytes: Buffer.byteLength(html, 'utf8') }));
+  try {
+    await bringIntoRun({ id, name, version }, `The design you read with artifact_get: ${read.artifact.title || id}, version ${version}, as a file`);
+  } catch {
+    return { ...read, fileWarning: 'The design could not be sent into this run as a file, so the whole snapshot is in this answer.' };
+  }
+  return {
+    artifact: read.artifact,
+    revision: { metadata: read.revision.metadata, artboards },
+    snapshotFile: {
+      name,
+      bytes: Buffer.byteLength(JSON.stringify(snapshot), 'utf8'),
+      contains: `The whole design of version ${version}: {artifactType, schemaVersion, artboards:[{id,name,width,height,x,y,html}]}, every board with its html, the editable source.`,
+      arrives: 'A message in this turn names the file\'s local path, usually within 20 seconds; read the boards you need from it with your own tools. If it cannot be opened, that message says why. artifact_get with inline:true returns the whole snapshot in an answer instead.',
+    },
+  };
+}
+
 export const designTools = [
   {
     name: 'artifact_versions',
@@ -58,7 +95,7 @@ export function designError(error) {
   return out;
 }
 
-export async function handleDesignTool(name, args, { baseUrl, token, indexRecall, indexStore, ownerNamespace, runProjectId = undefined }) {
+export async function handleDesignTool(name, args, { baseUrl, token, indexRecall, indexStore, ownerNamespace, runProjectId = undefined, bringIntoRun = undefined }) {
   // A run is never told its project id; without this default the model guessed (2026-11-03, run 9d6b8743 passed its
   // execution id three times). The run's own project is the default; an explicit projectId still wins.
   if (['artifact_publish', 'artifact_update'].includes(name) && args && (typeof args.projectId !== 'string' || !args.projectId.trim()) && runProjectId) args = { ...args, projectId: runProjectId };
@@ -78,7 +115,7 @@ export async function handleDesignTool(name, args, { baseUrl, token, indexRecall
   }
   if (name !== 'artifact_publish' && (typeof args?.id !== 'string' || !args.id.trim())) return invalid('id is required.');
   const client = designClient({ baseUrl, token });
-  if (name === 'artifact_get') return client.get(args.id, args.version);
+  if (name === 'artifact_get') return designReadAnswer(await client.get(args.id, args.version), { inline: args.inline === true, bringIntoRun });
   if (name === 'artifact_versions') return client.versions(args.id, { ...(args.cursor === undefined ? {} : { cursor: args.cursor }), ...(args.limit === undefined ? {} : { limit: args.limit }) });
 
   // Capture the existing record before writing; an index outage cannot erase a confirmed commit.

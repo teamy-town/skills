@@ -249,3 +249,83 @@ describe('design publish/update: the run\'s own project is the default', () => {
     expect(out.error).toMatch(/projectId is required/);
   });
 });
+
+// 2026-11-03 (run fbb8cbf2): two artifact_get reads of a 27-board design returned ~615 KB each into the product
+// owner's context. Inside a run the answer is the board index and the whole snapshot is brought into the run as a
+// file (the artifact_open mailbox door); inline:true, a call with no run, or a failed send still return it all.
+describe('design read inside a run: board index in the answer, whole design as a file', () => {
+  let inboxPosts, inboxStatus;
+  beforeEach(() => {
+    inboxPosts = []; inboxStatus = 200;
+    const transport = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input, init: any = {}) => {
+      if (String(input).endsWith('/inbox')) { inboxPosts.push({ url: String(input), body: JSON.parse(init.body) }); return new Response('{}', { status: inboxStatus }); }
+      return transport(input, init);
+    }));
+    vi.stubEnv('EXECUTION_ID', 'run-1'); vi.stubEnv('PROJECT_ID', 'mock-project'); vi.stubEnv('WORKFLOW_TYPE', 'product-owner');
+  });
+  const boardIndex = threeArtboards.artboards.map(({ html, ...board }) => ({ ...board, htmlBytes: Buffer.byteLength(html, 'utf8') }));
+
+  it('answers the board index with no html, and sends the version it read into the run', async () => {
+    const v1 = await create();
+    const got = await call('artifact_get', { id: v1.id, artifactType: 'design' });
+    expect(got.revision.snapshot).toBeUndefined();
+    expect(got.revision.artboards).toEqual(boardIndex);
+    expect(got.revision.metadata.version).toBe(1);
+    expect(JSON.stringify(got)).not.toContain(threeArtboards.artboards[0].html);
+    expect(got.snapshotFile).toMatchObject({ name: `design-${v1.id}-v1.json`, bytes: Buffer.byteLength(JSON.stringify(threeArtboards), 'utf8') });
+    expect(got.snapshotFile.arrives).toMatch(/inline:true/);
+    expect(inboxPosts).toEqual([{ url: 'https://api.mock.invalid/projects/mock-project/workflows/product-owner/inbox',
+      body: { text: expect.stringContaining('version 1'), executionId: 'run-1', fileForThisRun: true, attachments: [{ id: v1.id, name: `design-${v1.id}-v1.json`, version: 1 }] } }]);
+  });
+
+  it('a read without artifactType (latest design receipt) gets the same answer', async () => {
+    const v1 = await create();
+    const got = await call('artifact_get', { id: v1.id });
+    expect(got.revision.artboards).toEqual(boardIndex);
+    expect(inboxPosts).toHaveLength(1);
+  });
+
+  it('inline:true returns the whole snapshot and sends nothing', async () => {
+    const v1 = await create();
+    expect((await call('artifact_get', { id: v1.id, artifactType: 'design', version: 1, inline: true })).revision.snapshot).toEqual(threeArtboards);
+    expect((await call('artifact_get', { id: v1.id, inline: true })).revision.snapshot).toEqual(threeArtboards);
+    expect(inboxPosts).toEqual([]);
+  });
+
+  it('a send that fails returns the whole snapshot, saying so', async () => {
+    const v1 = await create();
+    inboxStatus = 503;
+    const got = await call('artifact_get', { id: v1.id, artifactType: 'design' });
+    expect(got.revision.snapshot).toEqual(threeArtboards);
+    expect(got.fileWarning).toMatch(/whole snapshot is in this answer/);
+  });
+
+  it('no run → the whole snapshot, as before', async () => {
+    const v1 = await create();
+    vi.stubEnv('EXECUTION_ID', '');
+    expect((await call('artifact_get', { id: v1.id, artifactType: 'design' })).revision.snapshot).toEqual(threeArtboards);
+    expect(inboxPosts).toEqual([]);
+  });
+
+  it('artifact_open on a design brings its snapshot file in', async () => {
+    const v1 = await create();
+    const out = await call('artifact_open', { id: v1.id });
+    expect(out).toMatchObject({ opening: true, id: v1.id, name: `design-${v1.id}.json` });
+    expect(inboxPosts[0].body.attachments).toEqual([{ id: v1.id, name: `design-${v1.id}.json` }]);
+  });
+
+  it('a revise still works from ids alone: operations need no html read back', async () => {
+    const v1 = await create();
+    const v2 = await call('artifact_update', { id: v1.id, artifactType: 'design', projectId: 'mock-project', baseVersion: 1, operations: singleBoardUpdate });
+    expect(v2.revision.snapshot).toEqual(versionTwo);
+    expect((await call('artifact_get', { id: v1.id, artifactType: 'design' })).revision.metadata.version).toBe(2);
+  });
+
+  it('the tool says how to get the whole design', () => {
+    const tool = artifactSkill.tools.find(t => t.name === 'artifact_get');
+    expect(tool.input_schema.properties.inline.type).toBe('boolean');
+    expect(tool.description).toMatch(/board index/);
+    expect(tool.description).toMatch(/inline:true returns the whole snapshot/);
+  });
+});

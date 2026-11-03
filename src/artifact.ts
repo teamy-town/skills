@@ -1,5 +1,5 @@
 import { SKILL_META } from '@zibby/skill-ids';
-import { designProperties, designVersionProperty, designTools, isDesignCall, handleDesignTool, designClient, designError } from './artifactDesign.js';
+import { designProperties, designVersionProperty, designInlineProperty, designTools, isDesignCall, handleDesignTool, designClient, designError, designReadAnswer } from './artifactDesign.js';
 import { commentTools, isCommentCall, handleCommentTool } from './artifactComments.js';
 /**
  * artifact.js — publish a self-contained, shareable HTML/Markdown page.
@@ -539,31 +539,53 @@ async function publishWithBudget(payload, format, preflight?: { html: string; da
  */
 async function artifactOpen(id: string, wantedName: unknown) {
   const data = await artifactReadFetch(id);
+  // A design's file is its snapshot JSON (every board with its html), opened by the same pump.
+  if (isDesignReceipt(data)) {
+    if (!runIdentity()) return { error: 'This call does not know its run, so the file cannot be brought into it.' };
+    const name = String((typeof wantedName === 'string' && wantedName.trim()) || `design-${id}.json`).slice(0, 200);
+    await bringFileIntoRun({ id, name }, `The file you opened with artifact_open: ${name}`);
+    return { opening: true, id, name, arrives: 'The design\'s snapshot JSON arrives in this run as a message naming its local path, usually within 20 seconds. If it cannot be opened, that message says why.' };
+  }
   const meta = data?.metadata;
   if (!meta?.binary) return { error: `Artifact ${id} is a page, not a stored file: artifact_get returns its text.` };
   if (meta.expired) return { error: `Artifact ${id} has expired: its file is gone.` };
   if (Number(meta.bytes) > ARTIFACT_OPEN_MAX_BYTES) return { error: `Artifact ${id} is over 8 MB, too large to bring into a run.` };
+  if (!runIdentity()) return { error: 'This call does not know its run, so the file cannot be brought into it.' };
+  const name = String((typeof wantedName === 'string' && wantedName.trim()) || meta.title || id).slice(0, 200);
+  await bringFileIntoRun({ id, name }, `The file you opened with artifact_open: ${name}`);
+  return { opening: true, id, name, arrives: 'The file arrives in this run as a message naming its local path, usually within 20 seconds. If it cannot be opened, that message says why.' };
+}
+
+/** A latest design receipt carries object capabilities, not legacy source. */
+const isDesignReceipt = (data) => !!data && ['artifactId', 'snapshot', 'revision', 'details'].some(key => Object.hasOwn(data, key));
+
+/** The run this call belongs to, or null when it was made outside a run (a person's own MCP client). */
+function runIdentity() {
   const executionId = process.env.EXECUTION_ID;
   const projectId = process.env.PROJECT_ID;
   const workflowType = process.env.WORKFLOW_TYPE;
-  if (!executionId || !projectId || !workflowType) return { error: 'This call does not know its run, so the file cannot be brought into it.' };
-  const name = (typeof wantedName === 'string' && wantedName.trim()) || meta.title || id;
-  const res = await fetchWithDeadline(`${getAccountApiUrl()}/projects/${encodeURIComponent(projectId)}/workflows/${encodeURIComponent(workflowType)}/inbox`, {
+  return executionId && projectId && workflowType ? { executionId, projectId, workflowType } : null;
+}
+
+/**
+ * Post one stored artifact to this run's own mailbox; the run's inbox pump opens
+ * it under the run's project access (core chat-attachment-reader) and tells the
+ * model its local path. `version` pins a design to the revision this call read.
+ */
+async function bringFileIntoRun(file: { id: string; name: string; version?: number }, text: string) {
+  const run = runIdentity();
+  if (!run) throw new Error('This call does not know its run, so the file cannot be brought into it.');
+  const res = await fetchWithDeadline(`${getAccountApiUrl()}/projects/${encodeURIComponent(run.projectId)}/workflows/${encodeURIComponent(run.workflowType)}/inbox`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${getSessionToken()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text: `The file you opened with artifact_open: ${String(name).slice(0, 200)}`,
-      executionId,
-      fileForThisRun: true,
-      attachments: [{ id, name: String(name).slice(0, 200) }],
-    }),
-  }, { kind: 'api', what: `artifact open ${id}` });
+    body: JSON.stringify({ text, executionId: run.executionId, fileForThisRun: true, attachments: [file] }),
+  }, { kind: 'api', what: `artifact open ${file.id}` });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`artifact open failed (${res.status}): ${body.slice(0, 300)}`);
   }
-  return { opening: true, id, name, arrives: 'The file arrives in this run as a message naming its local path, usually within 20 seconds. If it cannot be opened, that message says why.' };
 }
+const designFileDoor = () => (runIdentity() ? bringFileIntoRun : undefined);
 
 async function artifactReadFetch(id) {
   const session = getSessionToken();
@@ -953,7 +975,7 @@ Tools:
       if (isCommentCall(name)) return JSON.stringify(await handleCommentTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken() }));
       if (isDesignCall(name, args)) {
         try {
-          return JSON.stringify(await handleDesignTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken(), indexRecall, indexStore, ownerNamespace: artifactOwnerNamespace(), runProjectId: process.env.PROJECT_ID }));
+          return JSON.stringify(await handleDesignTool(name, args, { baseUrl: getAccountApiUrl(), token: getSessionToken(), indexRecall, indexStore, ownerNamespace: artifactOwnerNamespace(), runProjectId: process.env.PROJECT_ID, bringIntoRun: designFileDoor() }));
         } catch (error) { return JSON.stringify(designError(error)); }
       }
       switch (name) {
@@ -1133,8 +1155,8 @@ Tools:
           if (!id) return JSON.stringify({ error: 'id is required' });
           const data = await artifactReadFetch(id); // { metadata, content }
           // A latest design receipt carries object capabilities, not legacy source. Hydrate through the shared client.
-          if (data && ['artifactId', 'snapshot', 'revision', 'details'].some(key => Object.hasOwn(data, key))) {
-            try { return JSON.stringify(await designClient({ baseUrl: getAccountApiUrl(), token: getSessionToken() }).get(id)); }
+          if (isDesignReceipt(data)) {
+            try { return JSON.stringify(await designReadAnswer(await designClient({ baseUrl: getAccountApiUrl(), token: getSessionToken() }).get(id), { inline: args?.inline === true, bringIntoRun: designFileDoor() })); }
             catch (error) { return JSON.stringify(designError(error)); }
           }
           // A stored file's bytes are not in this answer, and this tool may be served away from the run's folder.
@@ -1262,12 +1284,13 @@ Tools:
     },
     {
       name: 'artifact_get',
-      description: 'For designs pass artifactType:"design" and optional version: returns every artboard HTML and position, artifact and immutable revision metadata. Omit version for latest. A fixed version also recovers source after a confirmed write whose readBack failed. Fetch ONE legacy artifact by id → { metadata, content }. To LIST what you published use kv_recall_prefix with keyPrefix "artifact:"; index records are written automatically.',
+      description: 'For designs pass artifactType:"design" and optional version: returns artifact and immutable revision metadata and the board index (id, name, size, position, html bytes of each board). Inside a run the whole design — every board with its html, the editable snapshot — arrives in this run as a JSON file, and a message in this turn names its local path; read the boards you need from it with your own tools. inline:true returns the whole snapshot in this answer instead. Omit version for latest. A fixed version also recovers source after a confirmed write whose readBack failed. Fetch ONE legacy artifact by id → { metadata, content }. To LIST what you published use kv_recall_prefix with keyPrefix "artifact:"; index records are written automatically.',
       input_schema: {
         type: 'object',
         properties: {
           artifactType: designProperties.artifactType,
           version: designVersionProperty,
+          inline: designInlineProperty,
           id: { type: 'string', description: 'The artifact id.' },
         },
         required: ['id'],
