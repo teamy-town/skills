@@ -180,10 +180,11 @@ function engineArgs(args: any): Record<string, unknown> {
 // asserted by the door's test against this module's tool list.
 const RECALL_QUERY_SCHEMA = {
   type: 'object',
-  description: 'One recall query (agent-graph RecallQuery): seeds and/or match as entry points; rels/kinds/direction/scope/provenance shape the walk; maxCost bounds it; validAt/asOf/recordedBetween are the time filters.',
+  description: 'One recall query (agent-graph RecallQuery): seeds, match and/or locate as entry points; rels/kinds/direction/scope/provenance shape the walk; maxCost bounds it; validAt/asOf/recordedBetween are the time filters.',
   properties: {
     seeds: { type: 'array', items: { type: 'string' }, description: 'Entry points by node id.' },
-    match: { type: 'object', description: 'Entry points by exact match: { kind?, label?, labelContains?, attrs?, limit? }.' },
+    match: { type: 'object', description: 'Entry points by exact match: { kind?, label?, labelContains?, attrs?, limit? }; with semantic (free text) the nodes nearest to it by meaning, most similar first, the other fields then filtering them.' },
+    locate: { type: 'string', description: 'Entry points by meaning: the nodes whose embedded text is nearest to this free text. Only kinds the graph embeds can be found this way.' },
     maxCost: { type: 'number', description: 'Budget: max accumulated edge cost from any seed (default 2).' },
     rels: { type: 'array', items: { type: 'string' }, description: 'Only traverse these relation names.' },
     kinds: { type: 'array', items: { type: 'string' }, description: 'Only RETURN nodes of these kinds.' },
@@ -253,7 +254,7 @@ Tools:
 - graph_put({ id, kind, label, attrs?, store? }): create/update a node (upsert by id, versions kept).
 - graph_link({ src, dst, rel, cost?, scope?, validFrom?, validTo?, attrs?, store? }): assert src →rel→ dst.
 - graph_get({ id | edgeId, store? }): one node or edge, latest version, no traversal — check before you put.
-- graph_recall({ queries: [{ seeds?, match?, rels?, kinds?, maxCost?, direction?, validAt?, asOf? }], store? }):
+- graph_recall({ queries: [{ seeds?, match?, locate?, rels?, kinds?, maxCost?, direction?, validAt?, asOf? }], store? }):
   batched traversal; each hit carries its cost, its seed and the relations walked (project 'summary' or 'full' on a query adds each path's edges or whole records).
 - graph_subgraph({ seeds?, match?, rels?, kinds?, maxCost?, store? }): the induced subgraph (nodes + all live edges) for visualisation/hand-off.
 - graph_trace({ id, store? }): a node's full history — every version and every edge, superseded ones included.
