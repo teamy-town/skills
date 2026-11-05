@@ -1,8 +1,8 @@
 # graph-memory sidecar — server contract
 
 The container runs `agent-graph-server` (from the open-source `agent-graph`
-package, `packages/agent-graph`) on the Postgres driver, listening on `PORT`
-(8093). The control-plane (`backend/src/handlers/graph-memory-store.js`) is the
+package, `packages/agent-graph`) on the SQLite driver — one file per graph,
+`/data/graphs/<graphId>.sqlite` — listening on `PORT` (8093). The control-plane (`backend/src/handlers/graph-memory-store.js`) is the
 ONLY caller; run containers never dial it (they go through the token-gated
 `/datasets/stores/:storeId/<op>` route, exactly like the gbrain KB).
 
@@ -115,7 +115,17 @@ version per update).
 
 ## Data
 
-Everything durable is under `/data` (`PGDATA=/data/pg`), the ONE path every
-sidecar mounts its named volume at. The declared `dataPath` in
+Everything durable is under `/data`, the ONE path every sidecar mounts its
+named volume at: `/data/graphs/<graphId>.sqlite`, one file per graph
+(`GRAPHS_DIR`).
+
+A volume written before the SQLite switch holds the graphs in a Postgres
+cluster at `/data/pg`. The entrypoint starts that Postgres (127.0.0.1 only)
+while any of its graphs has not been moved, and the server copies each graph
+to its file on first open — verified per table, temp file + rename, the
+schema left as it was; a failed copy is served from Postgres and logged
+`MIGRATION FAILED`. When nothing is left to move the entrypoint writes
+`/data/pg-retired` and Postgres is not started again. `/data/pg` is kept as
+the backup; nothing deletes it. The declared `dataPath` in
 `packages/workflow-templates/graph-memory/sidecar-spec.mjs` must be the same
 string — asserted by `test/declaration.test.js`.

@@ -6,10 +6,10 @@ our open-source engine (`packages/agent-graph`) inside instead of GBrain.
 | | gbrain (reference) | graph-memory |
 |---|---|---|
 | store type | `postgres` | `graph-memory` |
-| engine | GBrain CLI (Bun) + PGlite/pgvector | `agent-graph-server` (Node 22) + Postgres 16/pgvector |
+| engine | GBrain CLI (Bun) + PGlite/pgvector | `agent-graph-server` (Node 22), SQLite driver (`node:sqlite`) |
 | tenant key | `kbId = account:project:storeId` | `graphId = account:project:storeId` |
 | REST | `/ingest /query /delete /stat /drop /compact` | `/graph/<op>` (server-contract.md) |
-| durable state | `/data` | `/data` (`PGDATA=/data/pg`) |
+| durable state | `/data` | `/data/graphs/<graphId>.sqlite` (a volume from before the SQLite switch keeps `/data/pg`, moved on first open and kept as the backup — server-contract.md "Data") |
 | per-request config | `withEmbedding` (model/key/dims from the agent's env bag) | `embedding` block in every request body |
 | control-plane engine | `backend/src/handlers/postgres-store.js` | `backend/src/handlers/graph-memory-store.js` |
 | registration | built-in (`sidecar-registry.js gbrainSpec`) | template-carried (`packages/workflow-templates/graph-memory/sidecar-spec.mjs`) |

@@ -3,10 +3,12 @@
   "version": "0.1.3",
   "private": true,
   "type": "module",
-  "description": "Memory-graph sidecar — the open-source `agent-graph` engine (agent-graph-server, Postgres driver) with Postgres + pgvector embedded in the same container, behind the REST contract in server-contract.md. One shared engine per box; each store is an isolated graph addressed by a server-derived graphId.",
+  "description": "Memory-graph sidecar — the open-source `agent-graph` engine (agent-graph-server, SQLite driver: one file per graph under /data/graphs) behind the REST contract in server-contract.md. One shared engine per box; each store is an isolated graph addressed by a server-derived graphId. Postgres (+ pgvector, `pg`) ships only to move a volume an older image wrote.",
   "engineVersion": "0.2.1",
   "engineOf": "@zibby/agent-graph-memory",
-  "packageFeed": ["@zibby/agent-graph-memory"],
+  "packageFeed": [
+    "@zibby/agent-graph-memory"
+  ],
   "scripts": {
     "test": "node --test \"test/*.test.js\""
   },

@@ -1,11 +1,19 @@
 # graph-memory sidecar — the fleet's MEMORY GRAPH engine behind the stable REST
 # contract in server-contract.md. The engine is OUR open-source `agent-graph`
 # (packages/agent-graph, MIT) running its `agent-graph-server` binary on the
-# Postgres driver; Postgres + pgvector are embedded in the SAME container, the
-# way the gbrain sidecar embeds its database — one process tree, one `/data`
-# volume, no external database to stand up. ONE shared engine per box hosts N
-# isolated tenants: every request names its graph by a SERVER-DERIVED
+# SQLite driver (`node:sqlite`, no dependency): one file per graph under
+# /data/graphs, one process, one `/data` volume. ONE shared engine per box
+# hosts N isolated tenants: every request names its graph by a SERVER-DERIVED
 # `graphId` (backend/src/handlers/graph-memory-store.js), never a client one.
+#
+# POSTGRES STAYS IN THE IMAGE ONLY TO MOVE OLD VOLUMES (2026-11-05). Until
+# 0.1.3 the graphs lived in a Postgres 16 + pgvector cluster at /data/pg. A
+# volume that still holds one is moved graph by graph on first open
+# (entrypoint.sh, engine migrate.ts); reading its `vector` columns needs the
+# pgvector type, so the server packages, vector.so and `pg` stay until no
+# install has such a volume left. Cost: about 30 MB of the image; no RAM on a
+# box whose volume never had Postgres or has been fully moved (/data/pg-retired)
+# — Postgres is never started there.
 #
 # BASE: Alpine with its own Postgres 16 package + the official Node 22 binary
 # (see NODE below), pgvector compiled in a throw-away stage so no compiler ships. Until 0.1.1 the base was the Debian
@@ -134,9 +142,15 @@ RUN node -e ' \
   console.log(`@zibby/agent-graph-memory ${got} ok`);'
 RUN test -x node_modules/.bin/agent-graph-server \
     || (echo "agent-graph-server binary missing from the installed @zibby/agent-graph-memory — does the published package still declare it under package.json bin?" && exit 1)
-# The Postgres driver loads `pg` lazily (an OPTIONAL peer of the engine, so a
-# SQLite-only install stays dependency-free); this image declares it as a real
-# dependency and asserts it resolves, or the first request would 500.
+# The entrypoint moves an old volume with two engine flags; an engine without
+# them would fail at the first boot of such a box, so the build fails instead.
+RUN help="$(node_modules/.bin/agent-graph-server --help)"; \
+    for f in --migrate-from-pg --list-unmigrated; do \
+      printf '%s' "$help" | grep -q -- "$f" || { echo "the installed engine has no $f, which entrypoint.sh uses" >&2; exit 1; }; \
+    done; echo "engine migration flags ok"
+# The engine loads `pg` lazily (an OPTIONAL peer, so a SQLite-only install stays
+# dependency-free); this image needs it to move an old volume's graphs, declares
+# it as a real dependency and asserts it resolves.
 RUN node -e 'require.resolve("pg"); console.log("pg ok")'
 
 # Postgres major + pgvector: start a throw-away cluster and ask the SERVER —
@@ -161,13 +175,15 @@ COPY entrypoint.sh server-contract.md README.md ./
 RUN chmod +x /app/entrypoint.sh
 
 # DURABLE STATE LIVES AT /data — ONE path, every sidecar (north-star #9). The
-# declared `dataPath` in the template's sidecar-spec.mjs and the PGDATA the
-# entrypoint writes are the SAME string; nothing cross-checks them, so this is
-# asserted by packages/skills/sidecars/graph-memory/test/declaration.test.js.
+# declared `dataPath` in the template's sidecar-spec.mjs and the GRAPHS_DIR the
+# entrypoint writes are under the SAME string; nothing cross-checks them, so this
+# is asserted by packages/skills/sidecars/graph-memory/test/declaration.test.js.
 # Owned by `postgres` here so the named volume Docker seeds from this directory
 # is writable WITHOUT any capability grant (no chown at start ⇒ no capAdd).
-RUN mkdir -p /data && chown -R postgres:postgres /data
+RUN mkdir -p /data/graphs && chown -R postgres:postgres /data
 VOLUME ["/data"]
+ENV GRAPHS_DIR=/data/graphs
+# Only for a volume an older image wrote (see the top of this file).
 ENV PGDATA=/data/pg
 ENV PORT=8093
 ENV PATH="/app/node_modules/.bin:${PATH}"
@@ -175,7 +191,7 @@ ENV PATH="/app/node_modules/.bin:${PATH}"
 # catalog either way (all engine text is COLLATE "C", so it orders nothing).
 ENV LANG=en_US.utf8
 
-# Single-user image: everything (initdb, postgres, the engine) runs as the
+# Single-user image: everything (the engine, a legacy postgres) runs as the
 # unprivileged postgres user, so the manager's CapDrop-ALL baseline is enough.
 USER postgres
 
@@ -187,7 +203,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 8093) + '/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 # SIGINT, as the Debian/postgres base declared: `docker stop` reaches the
-# entrypoint's trap (TERM and INT both stop the engine, then Postgres -m fast).
+# entrypoint's trap (TERM and INT both stop the engine, then a legacy Postgres -m fast).
 STOPSIGNAL SIGINT
 
 ENTRYPOINT ["/app/entrypoint.sh"]

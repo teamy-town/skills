@@ -2,8 +2,8 @@
  * TRIPWIRES for the pairs this image shares with the rest of the tree and
  * nothing reconciles at run time (CLAUDE.md two-places rule):
  *
- *   1. /data — the Dockerfile's VOLUME + PGDATA and the entrypoint's PGDATA
- *      default must all be under the ONE path every sidecar mounts (north-star
+ *   1. /data — the Dockerfile's VOLUME + GRAPHS_DIR (and the legacy PGDATA)
+ *      and the entrypoint's defaults must all be under the ONE path every sidecar mounts (north-star
  *      #9: a declared `dataPath` that differs from what the app writes loses
  *      the data silently). The template spec's `dataPath` is checked too when
  *      the sibling repo is present.
@@ -41,6 +41,10 @@ const specField = (name) => (spec && spec.match(new RegExp(`^\\s*${name}: (?:'([
 
 test('durable state lives at /data — image, entrypoint and declaration agree', () => {
   assert.match(dockerfile, /^VOLUME \["\/data"\]/m);
+  assert.match(dockerfile, /^ENV GRAPHS_DIR=\/data\//m);
+  assert.match(entrypoint, /^: "\$\{GRAPHS_DIR:=\/data\//m);
+  assert.equal(dockerfile.match(/^ENV GRAPHS_DIR=(\S+)$/m)[1], entrypoint.match(/^: "\$\{GRAPHS_DIR:=([^}]+)\}"/m)[1]);
+  // The cluster an older image wrote, read only to move it.
   assert.match(dockerfile, /^ENV PGDATA=\/data\//m);
   assert.match(entrypoint, /^: "\$\{PGDATA:=\/data\//m);
   if (spec) assert.equal(specField('dataPath'), '/data');
@@ -104,8 +108,9 @@ test('an existing /data volume still opens: same Postgres major, same owner ids,
   assert.match(entrypoint, /^trap stop_all TERM INT EXIT$/m);
 });
 
-test('the entrypoint runs the server on the postgres driver and forwards the platform bearer', () => {
-  assert.match(entrypoint, /agent-graph-server --driver postgres/);
+test('the entrypoint runs the server on the sqlite driver and forwards the platform bearer', () => {
+  assert.match(entrypoint, /^agent-graph-server --driver sqlite --sqlite-dir "\$GRAPHS_DIR"/m);
+  assert.doesNotMatch(entrypoint, /--driver postgres/);
   // The engine defaults to 127.0.0.1; the control-plane dials the container over
   // the infra network, so the server must be told to bind every interface (this
   // was found by the first smoke: /health unreachable from outside the container).
@@ -115,4 +120,18 @@ test('the entrypoint runs the server on the postgres driver and forwards the pla
   // Postgres is never reachable off the container.
   assert.match(entrypoint, /listen_addresses=\$PG_HOST/);
   assert.match(entrypoint, /^PG_HOST=127\.0\.0\.1$/m);
+});
+
+test('an old volume is moved, never re-initialised: Postgres starts only for an existing cluster not yet retired', () => {
+  // A new box must never initdb: no cluster, no Postgres.
+  assert.doesNotMatch(entrypoint, /initdb/);
+  assert.match(entrypoint, /^if \[ -s "\$PGDATA\/PG_VERSION" \] && \[ ! -e "\$LEGACY_RETIRED" \]; then$/m);
+  // Retired only when the engine says nothing is left; a failed listing keeps moving.
+  assert.match(entrypoint, /--list-unmigrated\)" \\\n\s+\|\| pending=/);
+  assert.match(entrypoint, /if \[ "\$pending" = "\[\]" \]; then/);
+  assert.match(entrypoint, /MIGRATE_ARGS=\(--migrate-from-pg "\$PG_URL"\)/);
+  // The data dir itself is never removed or rewritten by the entrypoint.
+  assert.doesNotMatch(entrypoint, /rm -rf?\s+"?\$PGDATA/);
+  // The build fails when the engine lacks the flags the entrypoint uses.
+  assert.match(dockerfile, /for f in --migrate-from-pg --list-unmigrated; do/);
 });
