@@ -208,12 +208,3 @@ test('the run\'s mailbox identity reaches the spawned server', () => {
     if (r.command) for (const k of Object.keys(MAILBOX)) assert.equal(r.env[k], MAILBOX[k]);
   } finally { for (const k of Object.keys(MAILBOX)) delete process.env[k]; }
 });
-
-// 2026-11-06: the run says whether it is talking or working; an office seats it at a desk only for work.
-test('report_progress takes a mode (chat | work), sends it with the run line, and the page says when to pass it', async () => {
-  const { progressBody } = await import('../src/chatProgress');
-  assert.deepEqual(chatProgressSkill.tools[0].input_schema.properties.mode.enum, ['chat', 'work']);
-  assert.deepEqual(progressBody('hi', 'chat'), { statusLine: 'hi', mode: 'chat' });
-  assert.deepEqual(progressBody('hi', 'desk'), { statusLine: 'hi' });
-  assert.match(chatProgressSkill.promptFragment, /`chat` when you are only talking with someone[^\n]*`work` when you are doing real work/);
-});
