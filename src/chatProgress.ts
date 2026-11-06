@@ -157,6 +157,14 @@ export const chatProgressSkill: any = {
     'PROGRESS_API_URL', 'EXECUTION_ID',
   ],
   description: 'Tell the people watching what you are doing while you work — recorded as your run\'s own line (what an office view and your manager see) and posted to the triggering chat when there is one. Fire-and-forget.',
+  // A PLATFORM ABILITY (founder, 2026-11-06: "make the reply a general
+  // ability, no declare needed"). A person's line reaches WHICHEVER step is
+  // running and that step is told to answer with report_progress, so every
+  // model step of every run is handed this tool, declared or not
+  // (@zibby/agent-workflow skill-registry.ts withEveryModelStepSkills; the
+  // control plane serves it on the same flag). Only the tool: the page below
+  // still comes only where a node declares this skill.
+  everyModelStep: true,
 
   promptFragment: [
     '## Progress updates (report_progress)',
