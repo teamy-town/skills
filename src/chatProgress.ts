@@ -58,9 +58,12 @@ import { fetchWithDeadline } from './lib/http-deadline.js';
 /** The control plane keeps 280 characters of a run's line; a longer one is handed back to be rewritten. */
 export const PROGRESS_MAX_CHARS = 280;
 
-/** The ONE body the run-line write sends — the field is the progress report's own (`statusLine`). */
-export function progressBody(message: string) {
-  return { statusLine: message };
+/** What the run says it is doing: talking with someone, or real work (an office view seats it at a desk only for work). */
+export const WORK_MODES = ['chat', 'work'] as const;
+
+/** The ONE body the run-line write sends — the field is the progress report's own (`statusLine`), plus the run's `mode` when it names one. */
+export function progressBody(message: string, mode?: unknown) {
+  return { statusLine: message, ...(WORK_MODES.includes(mode as any) ? { mode } : {}) };
 }
 
 /**
@@ -68,7 +71,7 @@ export function progressBody(message: string) {
  * true when the control plane took it. Never throws: no door (a run outside the
  * platform), a refusal or a network error is simply "not recorded".
  */
-async function recordRunLine(message: string, env: any = process.env): Promise<boolean> {
+async function recordRunLine(message: string, mode?: unknown, env: any = process.env): Promise<boolean> {
   const base = String(env.PROGRESS_API_URL || '').replace(/\/+$/, '');
   const executionId = String(env.EXECUTION_ID || '').trim();
   if (!base || !executionId) return false;
@@ -76,7 +79,7 @@ async function recordRunLine(message: string, env: any = process.env): Promise<b
     const res: any = await fetchWithDeadline(`${base}/${encodeURIComponent(executionId)}/progress`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(env.PROJECT_API_TOKEN ? { Authorization: `Bearer ${env.PROJECT_API_TOKEN}` } : {}) },
-      body: JSON.stringify(progressBody(message)),
+      body: JSON.stringify(progressBody(message, mode)),
     }, { kind: 'api', what: 'chat-progress POST run line' });
     return !!res?.ok;
   } catch {
@@ -169,7 +172,7 @@ export const chatProgressSkill: any = {
   promptFragment: [
     '## Progress updates (report_progress)',
     'People watching your run see what you post with report_progress — over your head in the office view, to your manager, and in the chat that started this run. Your final answer reaches them only at the end.',
-    'Post one as soon as you start, saying what job you took on. After that: when the plan changes, when something important is done, and at once when you are blocked (say what you need). Routine work needs no update.',
+    'Post one as soon as you start, saying what job you took on, with `mode`: `chat` when you are only talking with someone (answering, explaining, asking), `work` when you are doing real work; post again with the other mode if that changes. In an office view you stay where you are for a chat and go to your desk for work. After that: when the plan changes, when something important is done, and at once when you are blocked (say what you need). Routine work needs no update.',
     'Treat successfully delivered progress updates and other messages as part of the same conversation: the person has already received their content.',
     'Your final reply may add the outcome, a correction or useful next steps; avoid repeating what you already told the person unless they ask for a recap. Keep meaningful progress updates while work continues.',
     `One or two short sentences (at most ${PROGRESS_MAX_CHARS} characters), in the language of your task, said the way you would tell a coworker who walks past your desk. They have read neither the code nor the ticket, the plan or any document you are working from, so a heading or a term taken from those means nothing to them: say in everyday words what you are doing and what it will change for the people who use the product, and name the ticket. No branches, commits, file names or test counts. When your \`notify\` input names a chat, pass its provider and chatId. A failed post never stops your work.`,
@@ -236,7 +239,7 @@ export const chatProgressSkill: any = {
         return JSON.stringify({ ok: false, error: `message is ${message.length} characters; keep it to one or two short sentences (at most ${PROGRESS_MAX_CHARS}) and post it again` });
       }
       // 1. Always: the run's own line — what the people watching the run see.
-      const recorded = await recordRunLine(message);
+      const recorded = await recordRunLine(message, args?.mode);
       // 2. Also: the chat this run came from, when one resolves.
       const { provider, chatId, mention } = resolveTarget(args);
       if (!provider || !chatId) {
@@ -268,6 +271,7 @@ export const chatProgressSkill: any = {
         type: 'object',
         properties: {
           message: { type: 'string', description: `The update, at most ${PROGRESS_MAX_CHARS} characters.` },
+          mode: { type: 'string', enum: [...WORK_MODES], description: 'chat = you are only talking with someone; work = you are doing real work. Shown in an office view: a chat stays where you are, work goes to your desk.' },
           answeredMessageIds: { type: 'array', items: { type: 'string' }, description: 'Inbox message ids this update answers.' },
           provider: { type: 'string', enum: ['lark', 'slack'], description: 'Chat provider (from your notify input); default from the runtime.' },
           chatId: { type: 'string', description: 'Chat/channel id (from your notify input); default from the runtime.' },
