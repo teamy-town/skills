@@ -36,8 +36,8 @@ const ENV = {
 Object.assign(process.env, ENV);
 
 const {
-  agentMessagingSkill, descendantsOf, compactRun, parseInboxNote, mailboxPrefix, DRAIN_MAX_PAGES, INBOX_TTL_DAYS, LIST_LIMIT_MAX,
-  logsQuery, LOG_LINES_MAX, LOG_LINE_MAX_CHARS, LOG_LINE_CHARS_MAX, MESSAGE_TEXT_MAX,
+  agentMessagingSkill, runHistorySkill, descendantsOf, compactRun, parseInboxNote, mailboxPrefix, DRAIN_MAX_PAGES, INBOX_TTL_DAYS, LIST_LIMIT_MAX,
+  logsQuery, LOG_LINES_MAX, LOG_LINE_MAX_CHARS, LOG_LINE_CHARS_MAX, MESSAGE_TEXT_MAX, RUN_ROW_FIELDS, RUNS_MAX,
 } = await import('../agentMessaging.js');
 
 const call = (name: string, args: any = {}) => agentMessagingSkill.handleToolCall(name, args).then(JSON.parse);
@@ -495,7 +495,7 @@ describe('the skill object', () => {
     }
     expect(agentMessagingSkill.serverName).toBe('agent_messaging');
     expect(agentMessagingSkill.allowedTools).toEqual(['mcp__agent_messaging__*']);
-    expect(agentMessagingSkill.tools.map((t: any) => t.name)).toEqual(['list_running_agents', 'read_run_logs', 'message_agent', 'check_messages', 'list_messages', 'needs_you', 'withdraw_card', 'request_local_folder']);
+    expect(agentMessagingSkill.tools.map((t: any) => t.name)).toEqual(['list_running_agents', 'message_agent', 'check_messages', 'list_messages', 'needs_you', 'withdraw_card', 'request_local_folder']);
   });
 
   it('unknown tool → {error}', async () => {
@@ -765,9 +765,97 @@ describe('read_run_logs', () => {
     expect(out.error).toMatch(/outside this run's family/);
   });
 
-  it('is declared as a tool and mentioned in the prompt', () => {
-    expect(agentMessagingSkill.tools.map((t: any) => t.name)).toContain('read_run_logs');
+  it('is the run-history skill\'s tool, still answered by agent-messaging for a catalogue that names it there', async () => {
+    expect(runHistorySkill.tools.map((t: any) => t.name)).toEqual(['read_run_logs']);
+    expect(agentMessagingSkill.tools.map((t: any) => t.name)).not.toContain('read_run_logs');
     expect(agentMessagingSkill.promptFragment).toMatch(/read_run_logs/);
+    mockDoor([['/logs/', () => ({ json: PAGE })]]);
+    const viaHistory = JSON.parse(await runHistorySkill.handleToolCall('read_run_logs', { executionId: 'child-A' }));
+    const viaMessaging = await call('read_run_logs', { executionId: 'child-A' });
+    expect(viaMessaging).toEqual(viaHistory);
+  });
+});
+
+// Founder, 2026-11-07 (run_log/magnum/2026-11-07-agent-cannot-read-own-past-runs): every agent — every node, chat
+// turns included — finds and reads its OWN past runs. Designer chat run f5c45ac3 was asked about its previous run
+// 56db30f6 and could not read it: no tool listed a finished run, and the one that reads logs was declared on none of
+// its nodes. Before this change these failed: there was no "runs" mode and no run-history platform ability.
+describe('run history — your own agent\'s runs, finished included, on every model step', () => {
+  const runCall = (args: any = {}) => runHistorySkill.handleToolCall('read_run_logs', args).then(JSON.parse);
+  const RUNS = { agent: 'magnum-product-design', nextCursor: 'c2', runs: [
+    { executionId: SELF, thisRun: true, status: 'running', startedAt: '2026-11-07T11:18:25.400Z', extra: 'dropped' },
+    { executionId: '56db30f6-34f3-4a5e-8932-7545204dd44d', status: 'completed', startedAt: '2026-11-07T11:12:15.321Z',
+      endedAt: '2026-11-07T11:17:05.807Z', durationSeconds: 290, lastLine: 'Screenshots looked at', title: '', env: { X: 'y' } },
+  ] };
+
+  it('mode "runs" reads the logs door\'s run list for this project and returns only the listed fields', async () => {
+    mockDoor([['/jobs/', () => ({ json: { success: true, data: RUNS } })]]);
+    const out = await runCall({ mode: 'runs', lines: 5, cursor: 'c1' });
+    expect(seen).toHaveLength(1);
+    const u = new URL(seen[0].url);
+    expect(u.origin + u.pathname).toBe('http://cp.local/jobs/proj-1');
+    expect(Object.fromEntries(u.searchParams)).toEqual({ limit: '5', cursor: 'c1' });
+    expect(out).toEqual({ mode: 'runs', agent: 'magnum-product-design', cursor: 'c2', runs: [
+      { executionId: SELF, thisRun: true, status: 'running', startedAt: '2026-11-07T11:18:25.400Z' },
+      { executionId: '56db30f6-34f3-4a5e-8932-7545204dd44d', status: 'completed', startedAt: '2026-11-07T11:12:15.321Z',
+        endedAt: '2026-11-07T11:17:05.807Z', durationSeconds: 290, lastLine: 'Screenshots looked at' },
+    ] });
+  });
+
+  it('defaults to 20 runs, caps at 100, refuses a bad count, and reads the cloud logs base when set', async () => {
+    mockDoor([['/jobs/', () => ({ json: RUNS })]]);
+    await runCall({ mode: 'runs' });
+    await runCall({ mode: 'runs', lines: 5000 });
+    process.env.RUN_LOGS_API_URL = 'https://logs.example/';
+    try { await runCall({ mode: 'runs' }); } finally { delete process.env.RUN_LOGS_API_URL; }
+    expect(seen.map((r) => r.url)).toEqual(['http://cp.local/jobs/proj-1?limit=20', 'http://cp.local/jobs/proj-1?limit=100', 'https://logs.example/jobs/proj-1?limit=20']);
+    expect((await runCall({ mode: 'runs', lines: 0 })).error).toMatch(/how many runs/);
+  });
+
+  it('a refusal comes back in the platform\'s words', async () => {
+    mockDoor([['/jobs/', () => ({ ok: false, status: 403, json: { error: 'This run is not known in this project, so it cannot reach other runs' } })]]);
+    expect(await runCall({ mode: 'runs' })).toEqual({ error: 'This run is not known in this project, so it cannot reach other runs' });
+  });
+
+  it('is a platform ability: every model step has it, with the run\'s identity and session env and no page of its own', () => {
+    expect(runHistorySkill.id).toBe('run-history');
+    expect(runHistorySkill.everyModelStep).toBe(true);
+    expect(runHistorySkill.callsBackend).toBe(true);
+    expect(runHistorySkill.promptFragment).toBeUndefined();
+    expect(runHistorySkill.allowedTools).toEqual(['mcp__run_history__*']);
+    const spec = runHistorySkill.resolve();
+    expect(spec.args.slice(1)).toEqual(['../dist/agentMessaging.js', 'runHistorySkill']);
+    for (const k of ['PROJECT_API_TOKEN', 'ZIBBY_ACCOUNT_API_URL', 'EXECUTION_ID', 'PROJECT_ID', 'WORKFLOW_TYPE']) expect(spec.env[k], k).toBe(ENV[k as keyof typeof ENV]);
+    const mode = runHistorySkill.tools[0].input_schema.properties.mode;
+    expect(mode.enum).toContain('runs');
+    expect(runHistorySkill.tools[0].description).toMatch(/your own agent's runs/);
+    expect(runHistorySkill.tools[0].description).toMatch(/finished included/);
+  });
+
+  // 🔗 TWO-PLACES: the platform declares the row (backend services/agent-run-history.js ROW_FIELDS, LIMIT_MAX) and
+  // serves it on the logs door's /jobs/{projectId} for a run's token; this skill reads exactly that.
+  const backendHistory = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'backend', 'src', 'services', 'agent-run-history.js');
+  const backendLogs = join(dirname(backendHistory), '..', 'handlers', 'workflow-logs.js');
+  it.skipIf(!existsSync(backendHistory))('contract pin: the platform\'s row fields, page size and door are the ones read here', () => {
+    const src = readFileSync(backendHistory, 'utf-8');
+    const m = /const ROW_FIELDS = Object\.freeze\(\[([^\]]*)\]\)/.exec(src);
+    expect(m, 'ROW_FIELDS must be declared in agent-run-history.js').toBeTruthy();
+    expect(m![1].split(',').map((x) => x.trim().replace(/^'|'$/g, ''))).toEqual([...RUN_ROW_FIELDS]);
+    expect(Number(/const LIMIT_MAX = (\d+)/.exec(src)?.[1])).toBe(RUNS_MAX);
+    expect(src).toContain('nextCursor');
+    expect(readFileSync(backendLogs, 'utf-8')).toMatch(/GET \/jobs\/:projectId[\s\S]*ownAgentRunPage/);
+  });
+
+  it('its id is the one in @zibby/skill-ids', async () => {
+    const { SKILL_IDS } = await import('@zibby/skill-ids');
+    expect(SKILL_IDS.RUN_HISTORY).toBe(runHistorySkill.id);
+  });
+
+  it('is in the registry the engine and the control plane both read the flag from', async () => {
+    const { getAllSkills } = await import('../index.js');
+    const everyStep = [...getAllSkills().entries()].filter(([, sk]: any) => sk?.everyModelStep === true).map(([id]) => id);
+    expect(everyStep).toEqual(expect.arrayContaining(['run-history', 'chat-progress']));
+    expect(everyStep).not.toContain('agent-messaging');
   });
 });
 

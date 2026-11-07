@@ -36,7 +36,7 @@ import { gitSkill } from './git.js';
 import { gitWriteSkill } from './git-write.js';
 import { chatMemorySkill } from './chat-memory.js';
 import { kvMemorySkill } from './kvMemory.js';
-import { agentMessagingSkill } from './agentMessaging.js';
+import { agentMessagingSkill, runHistorySkill } from './agentMessaging.js';
 import { personVerificationSkill } from './personVerification.js';
 import { datasetStoreSkill } from './datasetStore.js';
 import { artifactSkill } from './artifact.js';
@@ -94,6 +94,7 @@ reg(coreToolsSkill);
 reg(chatMemorySkill);
 reg(kvMemorySkill);
 reg(agentMessagingSkill);
+reg(runHistorySkill);
 reg(personVerificationSkill);
 reg(datasetStoreSkill);
 reg(artifactSkill);
@@ -124,7 +125,7 @@ reg({ ...slackSkill, id: 'slack_notify' });
 export { SKILL_IDS as SKILLS } from '@zibby/skill-ids';
 
 export { devServerPreviewRecipe } from './browser.js';
-export { browserSkill, jiraSkill, githubSkill, gitlabSkill, figmaSkill, hubspotSkill, linearSkill, vikunjaSkill, planeSkill, opendesignSkill, gitSkill, gitWriteSkill, slackSkill, larkSkill, discordSkill, notionSkill, linkedinSkill, googleDocsSkill, larkDocsSkill, larkAttendanceSkill, chatNotifySkill, sentrySkill, memorySkill, chatMemorySkill, kvMemorySkill, agentMessagingSkill, personVerificationSkill, datasetStoreSkill, artifactSkill, chartRenderSkill, reportCheckSkill, codeStatsSkill, chatProgressSkill, socialCardSkill, codeScanSkill, codebaseMemorySkill, gbrainSkill, graphMemorySkill, testRunnerSkill, testRunnerSkill as runnerSkill, skillInstallerSkill, coreToolsSkill, workflowBuilderSkill };
+export { browserSkill, jiraSkill, githubSkill, gitlabSkill, figmaSkill, hubspotSkill, linearSkill, vikunjaSkill, planeSkill, opendesignSkill, gitSkill, gitWriteSkill, slackSkill, larkSkill, discordSkill, notionSkill, linkedinSkill, googleDocsSkill, larkDocsSkill, larkAttendanceSkill, chatNotifySkill, sentrySkill, memorySkill, chatMemorySkill, kvMemorySkill, agentMessagingSkill, runHistorySkill, personVerificationSkill, datasetStoreSkill, artifactSkill, chartRenderSkill, reportCheckSkill, codeStatsSkill, chatProgressSkill, socialCardSkill, codeScanSkill, codebaseMemorySkill, gbrainSkill, graphMemorySkill, testRunnerSkill, testRunnerSkill as runnerSkill, skillInstallerSkill, coreToolsSkill, workflowBuilderSkill };
 export {
   openaiBillingSkill,
   anthropicBillingSkill,

@@ -23,6 +23,7 @@ export const SHARED_SKILL_MODULES: Readonly<Record<string, readonly [string, str
   'lark-attendance': ['larkAttendance.js', 'larkAttendanceSkill'],
   'kv-memory': ['kvMemory.js', 'kvMemorySkill'],
   'agent-messaging': ['agentMessaging.js', 'agentMessagingSkill'],
+  'run-history': ['agentMessaging.js', 'runHistorySkill'],
   'person-verification': ['personVerification.js', 'personVerificationSkill'],
   'dataset-store': ['datasetStore.js', 'datasetStoreSkill'],
   artifact: ['artifact.js', 'artifactSkill'],

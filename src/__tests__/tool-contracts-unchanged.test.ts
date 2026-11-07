@@ -14,12 +14,14 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { agentMessagingSkill } from '../agentMessaging.js';
+import { agentMessagingSkill, runHistorySkill } from '../agentMessaging.js';
 import { chatProgressSkill } from '../chatProgress.js';
 import { skeleton, accepts } from './fixtures/tool-contracts/schema-skeleton.js';
 
 const before = JSON.parse(readFileSync(new URL('./fixtures/tool-contracts/before.json', import.meta.url), 'utf8'));
-const servers: Record<string, any[]> = { agent_messaging: agentMessagingSkill.tools, chat_progress: chatProgressSkill.tools };
+// read_run_logs moved to run_history and gained mode "runs" (2026-11-07, a deliberate contract change:
+// run_log/magnum/2026-11-07-agent-cannot-read-own-past-runs); every recorded call is accepted as before.
+const servers: Record<string, any[]> = { agent_messaging: agentMessagingSkill.tools, run_history: runHistorySkill.tools, chat_progress: chatProgressSkill.tools };
 const schemaOf = (server: string, tool: string) => servers[server].find((t) => t.name === tool)?.input_schema;
 
 describe('tool contracts are unchanged by the wording', () => {
